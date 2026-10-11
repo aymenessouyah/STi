@@ -967,10 +967,68 @@
     var mapCoffreAdd = {};
     var mapCoffreDel = {};
     var tsClearCoffre = 0;
+    var mapKahootQ = {};
+    var mapKahootRep = {};
+    var mapCopiesTp = {};
+    var mapCopiesNote = {};
 
     tousAcces.forEach(function (a) {
         var pg = a.page || "";
         if (pg === "SUPPR_ACCES") return;
+        if (pg.indexOf("KAHOOT_Q:") === 0) {
+          try {
+            var kq = JSON.parse(a.lieu || "{}");
+            var idKq = kq.id || pg.slice(9);
+            var tsKq = Number(kq.ts || new Date(a.debut).getTime() || 0);
+            if (idKq && (!mapKahootQ[idKq] || tsKq >= mapKahootQ[idKq].ts)) {
+              kq.id = idKq;
+              kq.ts = tsKq;
+              mapKahootQ[idKq] = kq;
+            }
+          } catch (e) {}
+          return;
+        }
+        if (pg.indexOf("KAHOOT_REP:") === 0) {
+          try {
+            var kr = JSON.parse(a.lieu || "{}");
+            var idQKr = kr.idQ || pg.slice(11);
+            var uidKr = kr.uid || a.user_id;
+            if (idQKr && uidKr) {
+              if (!mapKahootRep[idQKr]) mapKahootRep[idQKr] = {};
+              mapKahootRep[idQKr][uidKr] = {
+                uid: uidKr,
+                nom: kr.nom || "",
+                classe: kr.classe || "—",
+                choix: kr.choix || "",
+                ts: Number(kr.ts || new Date(a.debut).getTime() || 0)
+              };
+            }
+          } catch (e) {}
+          return;
+        }
+        if (pg.indexOf("COPIE_TP:") === 0) {
+          try {
+            var cp = JSON.parse(a.lieu || "{}");
+            var idCp = cp.id || pg.slice(9);
+            if (idCp) {
+              cp.id = idCp;
+              cp.uid = cp.uid || a.user_id;
+              cp.ts = Number(cp.ts || new Date(a.debut).getTime() || 0);
+              mapCopiesTp[idCp] = cp;
+            }
+          } catch (e) {}
+          return;
+        }
+        if (pg.indexOf("COPIE_NOTE:") === 0) {
+          try {
+            var cn = JSON.parse(a.lieu || "{}");
+            var idCn = cn.idCopie || pg.slice(11);
+            if (idCn) {
+              mapCopiesNote[idCn] = cn;
+            }
+          } catch (e) {}
+          return;
+        }
         if (pg === "COFFRE_TP_CLEAR") {
           var tc = new Date(a.debut).getTime() || 0;
           if (tc > tsClearCoffre) tsClearCoffre = tc;
@@ -1229,6 +1287,51 @@
         window.__stiMajUiCoffreAdmin();
       }
 
+      /* Reconstruction QCM Live Kahoot */
+      var listKq = Object.keys(mapKahootQ).map(function (k) { return mapKahootQ[k]; }).sort(function (a, b) {
+        return Number(b.ts || 0) - Number(a.ts || 0);
+      });
+      if (listKq.length && (!window.__stiKahootActuel || Number(listKq[0].ts || 0) >= Number(window.__stiKahootActuel.ts || 0))) {
+        window.__stiKahootActuel = listKq[0];
+      }
+      window.__stiKahootVotesMap = mapKahootRep;
+      if (typeof window.__stiMajUiKahootAdmin === "function") {
+        window.__stiMajUiKahootAdmin();
+      }
+
+      /* Reconstruction Copies & TP rendus (COPIE_TP + messages [TP Bac à sable] / [Copie Bac Pratique] / [Requête SQL TP]) */
+      questionsLibres.forEach(function (ql) {
+        var txtQ = String(ql.texte || "");
+        if (txtQ.indexOf("[TP Bac à sable]") === 0 || txtQ.indexOf("[Copie Bac Pratique]") === 0 || txtQ.indexOf("[Requête SQL TP]") === 0) {
+          var idAuto = "cp_msg_" + (ql.id || ql.dbId || new Date(ql.ts || 0).getTime());
+          if (!mapCopiesTp[idAuto]) {
+            var typeTp = txtQ.indexOf("[Copie Bac Pratique]") === 0 ? "Bac Pratique" : (txtQ.indexOf("[Requête SQL TP]") === 0 ? "Requête SQL" : "Bac à sable");
+            mapCopiesTp[idAuto] = {
+              id: idAuto,
+              uid: ql.uid,
+              classe: ql.classe || "—",
+              typeTp: typeTp,
+              titre: typeTp + " (" + fmtDate(ql.ts) + ")",
+              codeComplet: txtQ,
+              ts: new Date(ql.ts || 0).getTime() || Date.now()
+            };
+          }
+        }
+      });
+      var listCopies = Object.keys(mapCopiesTp).map(function (idC) {
+        var c = mapCopiesTp[idC];
+        if (mapCopiesNote[idC]) {
+          c.note = mapCopiesNote[idC].note;
+          c.obs = mapCopiesNote[idC].obs || "";
+          c.tsNote = mapCopiesNote[idC].ts;
+        }
+        return c;
+      }).sort(function (a, b) { return Number(b.ts || 0) - Number(a.ts || 0); });
+      window.__stiListeCopiesTp = listCopies;
+      if (typeof window.__stiMajUiCopiesTpAdmin === "function") {
+        window.__stiMajUiCopiesTpAdmin();
+      }
+
       listeAlertesSecurite = Object.keys(mapSecAlertes).map(function (k) { return mapSecAlertes[k]; }).filter(function (al) {
         var tAl = new Date(al.ts).getTime() || 0;
         return !cfgSecuriteAdmin.purgeAlertesTs || tAl > Number(cfgSecuriteAdmin.purgeAlertesTs);
@@ -1253,6 +1356,8 @@
           pg === "SUPPR_ACCES" ||
           pg === "TABLEAU_BLANC" ||
           pg.indexOf("COFFRE_TP") === 0 ||
+          pg.indexOf("KAHOOT_") === 0 ||
+          pg.indexOf("COPIE_") === 0 ||
           pg.indexOf("SEC_ALERTE:") === 0 ||
           pg.indexOf("SEC_SESS:") === 0 ||
           pg.indexOf("MAIN_LEVEE:") === 0 ||
@@ -7482,5 +7587,695 @@
   });
   if (modalCoffre) {
     modalCoffre.addEventListener("click", function (e) { if (e.target === modalCoffre) modalCoffre.classList.remove("visible"); });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     📄 2. GÉNÉRATEUR DE « BULLETIN / BILAN PDF INDIVIDUEL A4 » (#btn-fiche-bulletin-pdf)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var btnFicheBulletinPdf = document.getElementById("btn-fiche-bulletin-pdf");
+  if (btnFicheBulletinPdf) {
+    btnFicheBulletinPdf.addEventListener("click", function () {
+      if (!eleveFicheActif) return;
+      var p = eleveFicheActif;
+      var uid = p.id;
+      var nomComplet = ((p.nom || "") + " " + (p.prenom || "")).trim() || p.email || p.phone || "Candidat";
+      var lyceePropre = nettoyerLycee(p.lycee) || "Lycée";
+      var secTot = (dureesTotales && dureesTotales[uid]) || 0;
+      var semAct = cleSemaine(new Date().toISOString());
+      var secHeb = (dureesSemaine && dureesSemaine[semAct] && dureesSemaine[semAct][uid]) || 0;
+      var nbVisites = (counts && counts[uid]) || 0;
+
+      var qList = (listeResultatsQuiz || []).filter(function (q) { return q.uid === uid; });
+      var sommeQ = 0;
+      var parMod = {};
+      qList.forEach(function (q) {
+        var n20 = Number(q.note20 || 0);
+        sommeQ += n20;
+        var m = q.quiz || "Général";
+        if (!parMod[m]) parMod[m] = { nb: 0, sum: 0, max: 0 };
+        parMod[m].nb++;
+        parMod[m].sum += n20;
+        if (n20 > parMod[m].max) parMod[m].max = n20;
+      });
+      var moyGen = qList.length ? (Math.round((sommeQ / qList.length) * 100) / 100) : null;
+
+      var flashTot = 0, flashOk = 0;
+      (questionsFlash || []).forEach(function (fq) {
+        var rMap = reponsesFlash[fq.id] || {};
+        if (rMap[uid]) {
+          flashTot++;
+          if (rMap[uid].correct !== false) flashOk++;
+        }
+      });
+
+      var copiesEl = (window.__stiListeCopiesTp || []).filter(function (c) { return c.uid === uid; });
+      var appreciationAuto =
+        moyGen == null
+          ? "Élève inscrit sur la plateforme STI V2.0. Doit compléter davantage de quiz et d'exercices d'entraînement."
+          : moyGen >= 15
+          ? "Excellent bilan ! Très bonne maîtrise des notions STI (HTML5, CSS3, JavaScript, SQL, PHP) et participation régulière."
+          : moyGen >= 11
+          ? "Bon ensemble. Des acquis solides, poursuivez les entraînements pratiques pour viser l'excellence au Bac."
+          : "Ensemble fragile. Il est recommandé de reprendre régulièrement les flashcards 3D, les cours animés et les exercices corrigés.";
+
+      var rowsModules = Object.keys(parMod).map(function (m) {
+        var st = parMod[m];
+        var moyM = Math.round((st.sum / st.nb) * 100) / 100;
+        return "<tr><td><b>" + echHtml(m) + "</b></td><td>" + st.nb + "</td><td><b>" + moyM + " / 20</b></td><td>" + st.max + " / 20</td></tr>";
+      }).join("");
+      if (!rowsModules) {
+        rowsModules = "<tr><td colspan='4' style='text-align:center;color:#64748b'>Aucun quiz évalué pour le moment</td></tr>";
+      }
+
+      var rowsDerniersQuiz = qList.slice(0, 8).map(function (q) {
+        return "<tr><td>" + echHtml(fmtDate(q.ts)) + "</td><td><b>" + echHtml(q.quiz || "Quiz") + "</b></td><td>" + echHtml(String(q.score || 0) + "/" + String(q.total || 20)) + "</td><td><b>" + echHtml(String(q.note20 || 0)) + " / 20</b></td></tr>";
+      }).join("");
+      if (!rowsDerniersQuiz) {
+        rowsDerniersQuiz = "<tr><td colspan='4' style='text-align:center;color:#64748b'>Aucun historique de quiz</td></tr>";
+      }
+
+      var htmlDoc =
+        "<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>Bilan STI - " + echHtml(nomComplet) + "</title>" +
+        "<style>" +
+        "@page{size:A4;margin:12mm}" +
+        "body{font-family:'Segoe UI',system-ui,sans-serif;color:#1e293b;margin:0;padding:18px;background:#fff;font-size:12.5px;line-height:1.45}" +
+        ".hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #23201a;padding-bottom:10px;margin-bottom:14px}" +
+        ".hdr-left h1{margin:0;font-size:20px;color:#d84315;font-weight:900}" +
+        ".hdr-left p{margin:2px 0 0;font-size:12px;color:#475569;font-weight:700}" +
+        ".hdr-right{text-align:right;font-size:11.5px;font-weight:700;color:#334155}" +
+        ".id-box{background:#f8fafc;border:2px solid #23201a;border-radius:12px;padding:11px 14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:6px}" +
+        ".kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}" +
+        ".kpi{border:2px solid #23201a;border-radius:10px;padding:8px 10px;background:#fffdf7;text-align:center}" +
+        ".kpi small{display:block;font-size:10px;text-transform:uppercase;color:#64748b;font-weight:800}" +
+        ".kpi b{display:block;font-size:16px;color:#23201a;margin-top:2px;font-weight:900}" +
+        "h2{font-size:14px;margin:12px 0 6px;color:#23201a;border-left:4px solid #f4511e;padding-left:8px}" +
+        "table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}" +
+        "th,td{border:1.5px solid #cbd5e1;padding:6px 9px;text-align:left}" +
+        "th{background:#f1f5f9;font-weight:900;color:#1e293b}" +
+        ".appr-box{border:2px solid #23201a;border-radius:12px;padding:10px 12px;background:#fffbeb;margin-top:10px}" +
+        ".sign-row{display:flex;justify-content:space-between;margin-top:18px;font-weight:800;font-size:12px}" +
+        ".no-print{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}" +
+        "@media print{.no-print{display:none!important}}" +
+        "</style></head><body class='sti-pdf-doc'>" +
+        "<div class='no-print'>" +
+          "<button onclick='window.print()' style='border:2px solid #23201a;border-radius:999px;padding:8px 18px;font-weight:900;background:#177245;color:#fff;cursor:pointer'>🖨️ Imprimer / Enregistrer en PDF (A4)</button>" +
+          "<button onclick='window.close()' style='border:2px solid #23201a;border-radius:999px;padding:8px 14px;font-weight:800;background:#fff;cursor:pointer'>✕ Fermer</button>" +
+        "</div>" +
+        "<div class='hdr'>" +
+          "<div class='hdr-left'><h1>📚 STI By A'e — Bilan Pédagogique Individuel</h1><p>Sciences et Technologies de l'Informatique (HTML5 · CSS3 · JavaScript · SQL · PHP/MySQLi)</p></div>" +
+          "<div class='hdr-right'><div><b>Professeur :</b> M. Aymen Essouyah</div><div><b>Date d'édition :</b> " + echHtml(new Date().toLocaleDateString("fr-FR")) + "</div></div>" +
+        "</div>" +
+        "<div class='id-box'>" +
+          "<div><b>Élève (Nom &amp; Prénom) :</b> " + echHtml(nomComplet) + (aLeStatutGold(p) ? " 👑 Gold" : "") + "</div>" +
+          "<div><b>Classe :</b> " + echHtml(p.classe || "—") + "</div>" +
+          "<div><b>Établissement :</b> " + echHtml(lyceePropre) + "</div>" +
+          "<div><b>Contact :</b> " + echHtml(p.email || p.phone || "—") + "</div>" +
+        "</div>" +
+        "<div class='kpis'>" +
+          "<div class='kpi'><small>Moyenne Quiz</small><b>" + (moyGen != null ? moyGen + " / 20" : "—") + "</b></div>" +
+          "<div class='kpi'><small>Temps total d'étude</small><b>" + echHtml(fmtDuree(secTot)) + "</b></div>" +
+          "<div class='kpi'><small>Durée cette semaine</small><b>" + echHtml(fmtDuree(secHeb)) + "</b></div>" +
+          "<div class='kpi'><small>Flash &amp; Copies TP</small><b>" + flashOk + "/" + flashTot + " · " + copiesEl.length + " TP</b></div>" +
+        "</div>" +
+        "<h2>📊 1. Synthèse des résultats par module</h2>" +
+        "<table><thead><tr><th>Module / Chapitre</th><th>Nombre de Quiz</th><th>Moyenne (/20)</th><th>Meilleure note</th></tr></thead><tbody>" + rowsModules + "</tbody></table>" +
+        "<h2>📝 2. Détail des derniers Quiz évalués</h2>" +
+        "<table><thead><tr><th>Date &amp; Heure</th><th>Quiz / Évaluation</th><th>Score brut</th><th>Note sur 20</th></tr></thead><tbody>" + rowsDerniersQuiz + "</tbody></table>" +
+        "<div class='appr-box'>" +
+          "<div style='font-weight:900;margin-bottom:4px;color:#92400e'>✍️ Appréciation &amp; Conseils du Professeur (modifiable avant impression) :</div>" +
+          "<div contenteditable='true' style='min-height:42px;outline:none;font-weight:700;color:#1e293b'>" + echHtml(appreciationAuto) + "</div>" +
+        "</div>" +
+        "<div class='sign-row'>" +
+          "<div>Signature de l'élève / Parent :<br><br>___________________________</div>" +
+          "<div style='text-align:right'>Signature du Professeur (M. Aymen Essouyah) :<br><br>___________________________</div>" +
+        "</div>" +
+        "</body></html>";
+
+      var w = window.open("", "_blank");
+      if (w) {
+        w.document.open();
+        w.document.write(htmlDoc);
+        w.document.close();
+      } else {
+        msg("⚠️ Veuillez autoriser l'ouverture de l'onglet d'impression.", "err");
+      }
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     📊 3. SONDAGE / VOTE QCM EN DIRECT AVEC GRAPHIQUE LIVE (Mode « Kahoot STI »)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var modalKahoot = document.getElementById("modal-kahoot-live");
+  var btnKahootTop = document.getElementById("btn-kahoot-top");
+  var btnKahootCard = document.getElementById("btn-kahoot-card");
+  var badgeKahootTop = document.getElementById("badge-kahoot-top");
+  var btnFermerKahoot = document.getElementById("btn-fermer-kahoot");
+  var btnFermerKahootX = document.getElementById("btn-fermer-kahoot-x");
+  var selKahootCible = document.getElementById("kahoot-cible");
+  var selKahootBonneRep = document.getElementById("kahoot-bonne-rep");
+  var inpKahootQuestion = document.getElementById("kahoot-question");
+  var inpKahootA = document.getElementById("kahoot-opt-a");
+  var inpKahootB = document.getElementById("kahoot-opt-b");
+  var inpKahootC = document.getElementById("kahoot-opt-c");
+  var inpKahootD = document.getElementById("kahoot-opt-d");
+  var btnKahootLancer = document.getElementById("btn-kahoot-lancer");
+  var btnKahootReveler = document.getElementById("btn-kahoot-reveler");
+  var btnKahootStop = document.getElementById("btn-kahoot-stop");
+  var spanKahootNbVotes = document.getElementById("kahoot-nb-votes");
+  var spanKahootPctOk = document.getElementById("kahoot-pct-ok");
+  var spanKahootStatut = document.getElementById("kahoot-statut-live");
+  var divKahootBars = document.getElementById("kahoot-bars-wrap");
+  var divKahootVotants = document.getElementById("kahoot-liste-votants");
+
+  var QUESTIONS_KAHOOT_STI = {
+    html: {
+      q: "Quel attribut HTML5 est obligatoire sur <input> pour que PHP récupère sa valeur dans $_POST ?",
+      a: "id",
+      b: "name",
+      c: "value",
+      d: "placeholder",
+      ok: "B"
+    },
+    css: {
+      q: "En CSS3 Flexbox, quelle propriété aligne les éléments horizontalement sur l'axe principal ?",
+      a: "align-items",
+      b: "flex-direction",
+      c: "justify-content",
+      d: "flex-wrap",
+      ok: "C"
+    },
+    js: {
+      q: "Que retourne \"BacSTI\".substring(3, 6) en JavaScript ?",
+      a: "\"Bac\"",
+      b: "\"STI\"",
+      c: "\"cST\"",
+      d: "Erreur",
+      ok: "B"
+    },
+    sql: {
+      q: "En SQL, quelle clause permet de filtrer le résultat d'une fonction d'agrégation comme COUNT(*) ou AVG() ?",
+      a: "WHERE",
+      b: "GROUP BY",
+      c: "ORDER BY",
+      d: "HAVING",
+      ok: "D"
+    },
+    php: {
+      q: "En PHP, quelle fonction retourne le nombre de lignes d'un résultat SELECT MySQLi ($res) ?",
+      a: "mysqli_num_rows($res)",
+      b: "mysqli_affected_rows($con)",
+      c: "mysqli_fetch_array($res)",
+      d: "mysqli_query($con, $req)",
+      ok: "A"
+    }
+  };
+
+  document.querySelectorAll(".btn-tpl-kahoot").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var k = btn.getAttribute("data-k");
+      var m = QUESTIONS_KAHOOT_STI[k];
+      if (!m) return;
+      if (inpKahootQuestion) inpKahootQuestion.value = m.q;
+      if (inpKahootA) inpKahootA.value = m.a;
+      if (inpKahootB) inpKahootB.value = m.b;
+      if (inpKahootC) inpKahootC.value = m.c;
+      if (inpKahootD) inpKahootD.value = m.d;
+      if (selKahootBonneRep) selKahootBonneRep.value = m.ok;
+    });
+  });
+
+  function peuplerCiblesKahoot() {
+    if (!selKahootCible) return;
+    var valAct = selKahootCible.value || (filtreClasse && filtreClasse !== "*" ? filtreClasse : "*");
+    var classes = obtenirClassesActives();
+    selKahootCible.innerHTML =
+      '<option value="*">🌐 Toutes les classes</option>' +
+      '<option value="3SI">🏫 Toutes les 3e SI</option>' +
+      '<option value="4SI">🏫 Toutes les 4e SI</option>';
+    classes.forEach(function (c) {
+      var o = document.createElement("option");
+      o.value = c;
+      o.textContent = "🏫 Classe " + c;
+      selKahootCible.appendChild(o);
+    });
+    var existe = Array.prototype.some.call(selKahootCible.options, function (opt) { return opt.value === valAct; });
+    selKahootCible.value = existe ? valAct : "*";
+  }
+
+  function rendGraphiqueKahootAdmin() {
+    var qAct = window.__stiKahootActuel;
+    var mapAll = window.__stiKahootVotesMap || {};
+    var votesObj = (qAct && qAct.id && mapAll[qAct.id]) ? mapAll[qAct.id] : {};
+    var votants = Object.keys(votesObj).map(function (u) { return votesObj[u]; });
+
+    if (badgeKahootTop) {
+      badgeKahootTop.style.display = votants.length ? "inline-block" : "none";
+      badgeKahootTop.textContent = String(votants.length);
+    }
+    if (spanKahootNbVotes) spanKahootNbVotes.textContent = String(votants.length);
+
+    var countsOpt = { A: 0, B: 0, C: 0, D: 0 };
+    var nbOk = 0;
+    var bonne = (qAct && qAct.bonneRep) || (selKahootBonneRep ? selKahootBonneRep.value : "B");
+    votants.forEach(function (v) {
+      var ch = String(v.choix || "").toUpperCase();
+      if (countsOpt[ch] != null) countsOpt[ch]++;
+      if (ch === bonne) nbOk++;
+    });
+
+    var pctOk = votants.length ? Math.round((nbOk / votants.length) * 100) : 0;
+    if (spanKahootPctOk) spanKahootPctOk.textContent = pctOk + " %";
+    if (spanKahootStatut) {
+      spanKahootStatut.textContent = qAct
+        ? (qAct.actif === false ? "⏹️ QCM terminé" : (qAct.revele ? "🎯 Corrigé révélé (" + bonne + ")" : "🟢 Vote en direct ouvert (" + (qAct.cible === "*" ? "Toutes classes" : qAct.cible) + ")"))
+        : "En attente de lancement";
+    }
+
+    if (!divKahootBars) return;
+    var couleurs = { A: "#ef4444", B: "#2563eb", C: "#d97706", D: "#16a34a" };
+    var labels = {
+      A: (qAct && qAct.options && qAct.options.A) || (inpKahootA && inpKahootA.value) || "A",
+      B: (qAct && qAct.options && qAct.options.B) || (inpKahootB && inpKahootB.value) || "B",
+      C: (qAct && qAct.options && qAct.options.C) || (inpKahootC && inpKahootC.value) || "C",
+      D: (qAct && qAct.options && qAct.options.D) || (inpKahootD && inpKahootD.value) || "D"
+    };
+
+    divKahootBars.innerHTML = ["A", "B", "C", "D"].map(function (lettre) {
+      var n = countsOpt[lettre] || 0;
+      var pct = votants.length ? Math.round((n / votants.length) * 100) : 0;
+      var estBonne = lettre === bonne;
+      return (
+        "<div style='display:flex;align-items:center;gap:10px'>" +
+          "<span style='width:28px;height:28px;border-radius:8px;background:" + couleurs[lettre] + ";color:#fff;font-weight:900;display:grid;place-items:center;flex-shrink:0;border:1.5px solid #fff'>" + lettre + "</span>" +
+          "<div style='flex:1;min-width:0'>" +
+            "<div style='display:flex;justify-content:space-between;font-size:12px;font-weight:800;margin-bottom:3px'>" +
+              "<span style='overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>" + echHtml(labels[lettre]) + (estBonne ? " ✅" : "") + "</span>" +
+              "<span>" + n + " vote(s) (" + pct + " %)</span>" +
+            "</div>" +
+            "<div style='height:12px;background:#1e293b;border-radius:999px;overflow:hidden;border:1px solid #475569'>" +
+              "<div style='height:100%;width:" + pct + "%;background:" + couleurs[lettre] + ";transition:width .3s ease'></div>" +
+            "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    if (divKahootVotants) {
+      if (!votants.length) {
+        divKahootVotants.innerHTML = "<em>Aucun vote reçu pour le moment.</em>";
+      } else {
+        divKahootVotants.innerHTML = votants.map(function (v) {
+          var p = (profiles || []).find(function (x) { return x.id === v.uid; });
+          var nomA = v.nom || (p ? ((p.nom || "") + " " + (p.prenom || "")).trim() : "Élève");
+          var clA = v.classe || (p && p.classe) || "—";
+          var okV = String(v.choix || "").toUpperCase() === bonne;
+          return "<span style='display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:999px;background:" + (okV ? "rgba(34,197,94,.2)" : "rgba(239,68,68,.2)") + ";border:1px solid " + (okV ? "#22c55e" : "#ef4444") + ";color:#f8fafc;font-weight:800'>" +
+            echHtml(nomA) + " (" + echHtml(clA) + ") : <b>" + echHtml(v.choix) + "</b> " + (okV ? "✅" : "❌") +
+          "</span>";
+        }).join("");
+      }
+    }
+  }
+
+  window.__stiMajUiKahootAdmin = rendGraphiqueKahootAdmin;
+
+  function lancerKahootLive() {
+    var qTxt = (inpKahootQuestion && inpKahootQuestion.value.trim()) || "";
+    if (!qTxt) {
+      msg("⚠️ Veuillez saisir la question du QCM.", "err");
+      return;
+    }
+    var idK = "kq_" + Date.now();
+    var payload = {
+      type: "kahoot_q",
+      actif: true,
+      revele: false,
+      id: idK,
+      cible: selKahootCible ? selKahootCible.value : "*",
+      question: qTxt,
+      options: {
+        A: (inpKahootA && inpKahootA.value.trim()) || "Option A",
+        B: (inpKahootB && inpKahootB.value.trim()) || "Option B",
+        C: (inpKahootC && inpKahootC.value.trim()) || "Option C",
+        D: (inpKahootD && inpKahootD.value.trim()) || "Option D"
+      },
+      bonneRep: selKahootBonneRep ? selKahootBonneRep.value : "B",
+      ts: Date.now()
+    };
+
+    window.__stiKahootActuel = payload;
+    if (!window.__stiKahootVotesMap) window.__stiKahootVotesMap = {};
+    window.__stiKahootVotesMap[idK] = {};
+    rendGraphiqueKahootAdmin();
+
+    if (adminUid) {
+      sb.from("acces").insert({
+        user_id: adminUid,
+        page: "KAHOOT_Q:" + idK,
+        lieu: JSON.stringify(payload),
+        duree_sec: 0
+      }).then(function () {});
+    }
+    try {
+      sb.channel("sti-diffusion").send({ type: "broadcast", event: "kahoot_q", payload: payload });
+    } catch (e) {}
+    fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).catch(function () {});
+    msg("🚀 QCM Live lancé sur les écrans des élèves !", "ok");
+  }
+
+  function revelerKahootLive() {
+    var qAct = window.__stiKahootActuel;
+    if (!qAct || !qAct.id) {
+      msg("⚠️ Lancez d'abord un QCM Live.", "err");
+      return;
+    }
+    qAct.revele = true;
+    qAct.ts = Date.now();
+    rendGraphiqueKahootAdmin();
+
+    if (adminUid) {
+      sb.from("acces").insert({
+        user_id: adminUid,
+        page: "KAHOOT_Q:" + qAct.id,
+        lieu: JSON.stringify(qAct),
+        duree_sec: 0
+      }).then(function () {});
+    }
+    try {
+      sb.channel("sti-diffusion").send({ type: "broadcast", event: "kahoot_q", payload: qAct });
+    } catch (e) {}
+    fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+      method: "POST",
+      body: JSON.stringify(qAct)
+    }).catch(function () {});
+    msg("🎯 Corrigé (" + qAct.bonneRep + ") révélé sur les écrans des élèves !", "ok");
+  }
+
+  function stopperKahootLive() {
+    var idStop = (window.__stiKahootActuel && window.__stiKahootActuel.id) || ("kq_" + Date.now());
+    var payloadStop = {
+      type: "kahoot_q",
+      actif: false,
+      id: idStop,
+      cible: "*",
+      ts: Date.now()
+    };
+    window.__stiKahootActuel = payloadStop;
+    rendGraphiqueKahootAdmin();
+    if (adminUid) {
+      sb.from("acces").insert({
+        user_id: adminUid,
+        page: "KAHOOT_Q:" + idStop,
+        lieu: JSON.stringify(payloadStop),
+        duree_sec: 0
+      }).then(function () {});
+    }
+    try {
+      sb.channel("sti-diffusion").send({ type: "broadcast", event: "kahoot_q", payload: payloadStop });
+    } catch (e) {}
+    fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+      method: "POST",
+      body: JSON.stringify(payloadStop)
+    }).catch(function () {});
+    msg("⏹️ QCM Live fermé chez les élèves.", "ok");
+  }
+
+  function ouvrirModalKahoot() {
+    peuplerCiblesKahoot();
+    rendGraphiqueKahootAdmin();
+    if (modalKahoot) modalKahoot.classList.add("visible");
+  }
+
+  if (btnKahootTop) btnKahootTop.addEventListener("click", ouvrirModalKahoot);
+  if (btnKahootCard) btnKahootCard.addEventListener("click", ouvrirModalKahoot);
+  if (btnKahootLancer) btnKahootLancer.addEventListener("click", lancerKahootLive);
+  if (btnKahootReveler) btnKahootReveler.addEventListener("click", revelerKahootLive);
+  if (btnKahootStop) btnKahootStop.addEventListener("click", stopperKahootLive);
+  [btnFermerKahoot, btnFermerKahootX].forEach(function (b) {
+    if (b) b.addEventListener("click", function () { if (modalKahoot) modalKahoot.classList.remove("visible"); });
+  });
+  if (modalKahoot) {
+    modalKahoot.addEventListener("click", function (e) { if (e.target === modalKahoot) modalKahoot.classList.remove("visible"); });
+  }
+
+  /* Écoute temps réel des votes Kahoot et des copies TP dans admin.js */
+  try {
+    sb.channel("sti-diffusion")
+      .on("broadcast", { event: "kahoot_rep" }, function (p) {
+        var r = p && p.payload;
+        if (!r || !r.idQ || !r.uid) return;
+        if (!window.__stiKahootVotesMap) window.__stiKahootVotesMap = {};
+        if (!window.__stiKahootVotesMap[r.idQ]) window.__stiKahootVotesMap[r.idQ] = {};
+        window.__stiKahootVotesMap[r.idQ][r.uid] = r;
+        rendGraphiqueKahootAdmin();
+      })
+      .on("broadcast", { event: "copie_tp" }, function (p) {
+        var cp = p && p.payload;
+        if (!cp || !cp.id) return;
+        if (!window.__stiListeCopiesTp) window.__stiListeCopiesTp = [];
+        window.__stiListeCopiesTp = [cp].concat(window.__stiListeCopiesTp.filter(function (x) { return x.id !== cp.id; }));
+        rendListeCopiesTpAdmin();
+      });
+  } catch (e) {}
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     📥 5. BOÎTE DE RÉCEPTION & NOTATION DES « TP / COPIES RENDUS » (/20)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var modalCopiesTp = document.getElementById("modal-copies-tp");
+  var btnCopiesTop = document.getElementById("btn-copies-top");
+  var btnCopiesCard = document.getElementById("btn-copies-card");
+  var badgeCopiesTop = document.getElementById("badge-copies-top");
+  var btnFermerCopies = document.getElementById("btn-fermer-copies");
+  var btnFermerCopiesX = document.getElementById("btn-fermer-copies-x");
+  var selCopiesClasse = document.getElementById("copies-filtre-classe");
+  var btnCopiesExportCsv = document.getElementById("btn-copies-export-csv");
+  var divListeCopiesTp = document.getElementById("liste-copies-tp-admin");
+  var spanNbCopiesTp = document.getElementById("nb-copies-tp");
+  var zoneApercuCopie = document.getElementById("zone-apercu-copie-tp");
+  var iframeApercuCopie = document.getElementById("iframe-apercu-copie-tp");
+  var titreApercuCopie = document.getElementById("titre-apercu-copie-tp");
+  var btnFermerApercuCopie = document.getElementById("btn-fermer-apercu-copie");
+
+  function peuplerFiltreCopiesClasse() {
+    if (!selCopiesClasse) return;
+    var v = selCopiesClasse.value || "*";
+    var classes = obtenirClassesActives();
+    selCopiesClasse.innerHTML = '<option value="*">🌐 Toutes les classes</option>';
+    classes.forEach(function (c) {
+      var o = document.createElement("option");
+      o.value = c;
+      o.textContent = "🏫 Classe " + c;
+      selCopiesClasse.appendChild(o);
+    });
+    var ex = Array.prototype.some.call(selCopiesClasse.options, function (opt) { return opt.value === v; });
+    selCopiesClasse.value = ex ? v : "*";
+  }
+
+  function construireHtmlExecutableCopie(c) {
+    if (c.html || c.css || c.js) {
+      return "<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><style>" + (c.css || "") + "</style></head><body>" +
+        (c.html || "") + "<script>" + (c.js || "") + "<\/script></body></html>";
+    }
+    var raw = String(c.codeComplet || "");
+    var mHtml = raw.match(/---\s*HTML\s*---\s*([\s\S]*?)(?:---\s*CSS\s*---|$)/i);
+    var mCss = raw.match(/---\s*CSS\s*---\s*([\s\S]*?)(?:---\s*JS\s*---|$)/i);
+    var mJs = raw.match(/---\s*JS\s*---\s*([\s\S]*?)$/i);
+    if (mHtml || mCss || mJs) {
+      return "<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><style>" + ((mCss && mCss[1]) || "") + "</style></head><body>" +
+        ((mHtml && mHtml[1]) || "") + "<script>" + ((mJs && mJs[1]) || "") + "<\/script></body></html>";
+    }
+    return "<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><style>body{font-family:monospace;padding:12px;background:#0f172a;color:#f8fafc;white-space:pre-wrap}</style></head><body>" +
+      echHtml(raw) + "</body></html>";
+  }
+
+  function rendListeCopiesTpAdmin() {
+    var toutes = window.__stiListeCopiesTp || [];
+    var nonNotees = toutes.filter(function (c) { return c.note == null || c.note === ""; }).length;
+    if (badgeCopiesTop) {
+      badgeCopiesTop.style.display = nonNotees ? "inline-block" : "none";
+      badgeCopiesTop.textContent = String(nonNotees);
+    }
+
+    var clFiltre = selCopiesClasse ? selCopiesClasse.value : "*";
+    var liste = toutes.filter(function (c) {
+      if (clFiltre === "*") return true;
+      var p = (profiles || []).find(function (x) { return x.id === c.uid; });
+      var cl = c.classe || (p && p.classe) || "";
+      return cl === clFiltre;
+    });
+
+    if (spanNbCopiesTp) spanNbCopiesTp.textContent = String(liste.length);
+    if (!divListeCopiesTp) return;
+
+    if (!liste.length) {
+      divListeCopiesTp.innerHTML =
+        "<div style='text-align:center;padding:20px;background:#fff;border:2px dashed #c7baa5;border-radius:14px;color:#6b6152;font-weight:800'>" +
+        "📭 Aucune copie ou TP rendu pour ce filtre. Les copies envoyées depuis le Bac à sable, l'Atelier Bac Pratique ou le Labo SQL apparaissent automatiquement ici." +
+        "</div>";
+      return;
+    }
+
+    divListeCopiesTp.innerHTML = "";
+    liste.forEach(function (c) {
+      var p = (profiles || []).find(function (x) { return x.id === c.uid; });
+      var nomEl = c.nom || (p ? ((p.nom || "") + " " + (p.prenom || "")).trim() : "") || (p && (p.email || p.phone)) || "Élève";
+      var clEl = c.classe || (p && p.classe) || "—";
+      var dtStr = c.ts ? fmtDate(new Date(c.ts).toISOString()) : "—";
+
+      var card = document.createElement("div");
+      card.style.cssText = "background:#fff;border:2px solid #23201a;border-radius:14px;padding:12px 14px;box-shadow:2.5px 2.5px 0 #23201a;";
+
+      var top = document.createElement("div");
+      top.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;";
+      top.innerHTML =
+        "<div>" +
+          "<strong style='font-size:14px;color:#23201a'>👤 " + echHtml(nomEl) + "</strong> " +
+          "<span style='background:#ede9fe;color:#6d28d9;border:1.5px solid #23201a;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:900'>🏫 " + echHtml(clEl) + "</span> " +
+          "<span style='background:#f3ead9;color:#23201a;border:1.5px solid #23201a;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:900'>💻 " + echHtml(c.typeTp || "TP STI") + "</span>" +
+        "</div>" +
+        "<div style='font-size:11.5px;font-weight:800;color:#6b6152'>🕒 " + echHtml(dtStr) + "</div>";
+
+      var codePre = document.createElement("pre");
+      codePre.style.cssText = "margin:0 0 8px;max-height:110px;overflow-y:auto;background:#141a24;color:#e2e8f0;padding:8px 10px;border-radius:10px;font-size:11.5px;white-space:pre-wrap;border:1.5px solid #23201a;";
+      codePre.textContent = c.codeComplet || ((c.html || "") + "\n" + (c.css || "") + "\n" + (c.js || "") + "\n" + (c.sql || "")).trim();
+
+      var bar = document.createElement("div");
+      bar.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;";
+
+      var btnRun = document.createElement("button");
+      btnRun.type = "button";
+      btnRun.style.cssText = "border:1.5px solid #23201a;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:900;background:#e0f2fe;color:#0369a1;cursor:pointer;";
+      btnRun.textContent = "▶️ Exécuter / Prévisualiser";
+      btnRun.addEventListener("click", function () {
+        if (!zoneApercuCopie || !iframeApercuCopie) return;
+        zoneApercuCopie.hidden = false;
+        if (titreApercuCopie) titreApercuCopie.textContent = "▶️ Copie de " + nomEl + " (" + clEl + ") — " + (c.typeTp || "TP");
+        iframeApercuCopie.srcdoc = construireHtmlExecutableCopie(c);
+        zoneApercuCopie.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+
+      var noteWrap = document.createElement("div");
+      noteWrap.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;justify-content:flex-end;";
+
+      var inpNote = document.createElement("input");
+      inpNote.type = "number";
+      inpNote.min = "0";
+      inpNote.max = "20";
+      inpNote.step = "0.25";
+      inpNote.placeholder = "Note /20";
+      inpNote.value = c.note != null ? String(c.note) : "";
+      inpNote.style.cssText = "width:90px;margin:0;padding:6px 8px;font-weight:900;border:2px solid #23201a;border-radius:8px;";
+
+      var inpObs = document.createElement("input");
+      inpObs.type = "text";
+      inpObs.placeholder = "Observation / corrigé pour l'élève…";
+      inpObs.value = c.obs || "";
+      inpObs.style.cssText = "width:220px;max-width:100%;margin:0;padding:6px 8px;font-weight:700;border:2px solid #23201a;border-radius:8px;";
+
+      var btnSaveNote = document.createElement("button");
+      btnSaveNote.type = "button";
+      btnSaveNote.style.cssText = "border:2px solid #23201a;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:900;background:#177245;color:#fff;cursor:pointer;";
+      btnSaveNote.textContent = c.note != null ? "✅ Note envoyée (" + c.note + "/20)" : "✅ Envoyer la note";
+      btnSaveNote.addEventListener("click", function () {
+        var valN = inpNote.value.trim();
+        if (valN === "" || isNaN(Number(valN))) {
+          msg("⚠️ Saisissez une note sur 20.", "err");
+          inpNote.focus();
+          return;
+        }
+        var n20 = Math.max(0, Math.min(20, Number(valN)));
+        var obsTxt = inpObs.value.trim();
+        c.note = n20;
+        c.obs = obsTxt;
+        rendListeCopiesTpAdmin();
+
+        var payloadNote = {
+          type: "copie_note",
+          idCopie: c.id,
+          uid: c.uid,
+          typeTp: c.typeTp || "TP STI",
+          note: n20,
+          obs: obsTxt,
+          ts: Date.now()
+        };
+        if (adminUid) {
+          sb.from("acces").insert({
+            user_id: adminUid,
+            page: "COPIE_NOTE:" + c.id,
+            lieu: JSON.stringify(payloadNote),
+            duree_sec: 0
+          }).then(function () {});
+        }
+        try {
+          sb.channel("sti-diffusion").send({ type: "broadcast", event: "copie_note", payload: payloadNote });
+        } catch (e) {}
+        fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+          method: "POST",
+          body: JSON.stringify(payloadNote)
+        }).catch(function () {});
+        msg("✅ Note " + n20 + "/20 envoyée en direct à " + nomEl + " !", "ok");
+      });
+
+      noteWrap.append(inpNote, inpObs, btnSaveNote);
+      bar.append(btnRun, noteWrap);
+      card.append(top, codePre, bar);
+      divListeCopiesTp.appendChild(card);
+    });
+  }
+
+  window.__stiMajUiCopiesTpAdmin = rendListeCopiesTpAdmin;
+
+  function ouvrirModalCopiesTp() {
+    peuplerFiltreCopiesClasse();
+    rendListeCopiesTpAdmin();
+    if (modalCopiesTp) modalCopiesTp.classList.add("visible");
+  }
+
+  if (btnCopiesTop) btnCopiesTop.addEventListener("click", ouvrirModalCopiesTp);
+  if (btnCopiesCard) btnCopiesCard.addEventListener("click", ouvrirModalCopiesTp);
+  if (selCopiesClasse) selCopiesClasse.addEventListener("change", rendListeCopiesTpAdmin);
+  if (btnFermerApercuCopie) {
+    btnFermerApercuCopie.addEventListener("click", function () {
+      if (zoneApercuCopie) zoneApercuCopie.hidden = true;
+    });
+  }
+  [btnFermerCopies, btnFermerCopiesX].forEach(function (b) {
+    if (b) b.addEventListener("click", function () { if (modalCopiesTp) modalCopiesTp.classList.remove("visible"); });
+  });
+  if (modalCopiesTp) {
+    modalCopiesTp.addEventListener("click", function (e) { if (e.target === modalCopiesTp) modalCopiesTp.classList.remove("visible"); });
+  }
+  if (btnCopiesExportCsv) {
+    btnCopiesExportCsv.addEventListener("click", function () {
+      var toutes = window.__stiListeCopiesTp || [];
+      var lignes = ['"Date";"Nom & Prenom";"Classe";"Type de TP";"Note (/20)";"Observation"'];
+      toutes.forEach(function (c) {
+        var p = (profiles || []).find(function (x) { return x.id === c.uid; });
+        var nomEl = c.nom || (p ? ((p.nom || "") + " " + (p.prenom || "")).trim() : "Élève");
+        var clEl = c.classe || (p && p.classe) || "—";
+        var cols = [
+          c.ts ? fmtDate(new Date(c.ts).toISOString()) : "—",
+          nomEl,
+          clEl,
+          c.typeTp || "TP STI",
+          c.note != null ? String(c.note).replace(".", ",") : "Non noté",
+          c.obs || ""
+        ].map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; });
+        lignes.push(cols.join(";"));
+      });
+      var blob = new Blob(["\uFEFF" + lignes.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "Notes_Copies_TP_STI.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      msg("📥 Notes des copies TP exportées en CSV Excel.", "ok");
+    });
   }
 })();

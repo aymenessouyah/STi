@@ -1181,10 +1181,10 @@
           <span id="titre-tb-admin" style="color:#177245;transition:color .25s ease" title="🟢 En ligne">Tableau de bord STI V2.0</span>
           <span class="badge-temoin-examen" id="badge-temoin-examen" role="button" tabindex="0" title="🟢 Accès aux cours ouvert — Cliquer pour ouvrir le Centre de Sécurité / Mode Examen">🟢 Accès ouvert</span>
           <span class="badge-admin-gold">👑 Admin Gold</span>
-          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v113</span>
+          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v114</span>
           <span class="badge-supabase" id="badge-supabase-quota" title="Espace disponible dans la base Supabase (Quota 500 Mo) — cliquer pour voir le détail">🗄️ Supabase : <b id="sb-pct-restant">99,8 %</b> restant (<span id="sb-qte-restante">499,2 Mo / 500 Mo</span>)<span class="jauge-sb-mini" aria-hidden="true"><i id="sb-jauge-barre" style="width:99.8%"></i></span></span>
         </h1>
-        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v113)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
+        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v114)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
       </div>
     </div>
     <div class="barre-util">
@@ -1192,8 +1192,10 @@
       <a class="btn-util mob-extra" href="carte-visite.html" title="Ouvrir et partager la carte de visite électronique avec QR code">🪪 <span class="lbl-pc">Carte visite</span><span class="lbl-mob">Carte</span></a>
       <button class="btn-util" id="btn-messenger-top" type="button" title="Ouvrir la messagerie directe Messenger STI avec les candidats" style="background:#fff3e0;border-color:#f4511e;color:#d84315">💬 <span class="lbl-pc">Messenger</span><span class="lbl-mob">Chat</span> <span id="badge-msn-top" style="display:none;background:#ffd54f;color:#23201a;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util" id="btn-flash-top" type="button" title="Lancer une Question Flash / Sondage Live en classe" style="background:#fff8e1;border-color:#d97706;color:#b45309">⚡ <span class="lbl-pc">Question Flash</span><span class="lbl-mob">Flash</span></button>
+      <button class="btn-util" id="btn-kahoot-top" type="button" title="Lancer un Sondage / Vote QCM A-B-C-D en direct avec graphique live (Mode Kahoot STI)" style="background:#f3e8ff;border-color:#7c3aed;color:#6d28d9">📊 <span class="lbl-pc">QCM Live</span><span class="lbl-mob">Kahoot</span> <span id="badge-kahoot-top" style="display:none;background:#7c3aed;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util" id="btn-tb-live-top" type="button" title="Tableau Blanc Live : projeter un extrait de code ou un corrigé en direct sur les écrans des élèves" style="background:#e0f2fe;border-color:#0284c7;color:#0369a1">📺 <span class="lbl-pc">Tableau Blanc</span><span class="lbl-mob">Code Live</span></button>
       <button class="btn-util" id="btn-coffre-top" type="button" title="Coffre de Partage Rapide : distribuer un fichier (.zip, .sql, .html, .php, .pdf) à une classe" style="background:#fef3c7;border-color:#b45309;color:#92400e">🗂️ <span class="lbl-pc">Coffre TP</span><span class="lbl-mob">Fichiers</span> <span id="badge-coffre-top" style="display:none;background:#b45309;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
+      <button class="btn-util" id="btn-copies-top" type="button" title="Boîte de Réception &amp; Notation des TP et Copies rendus par les élèves (/20)" style="background:#dcfce7;border-color:#15803d;color:#166534">📥 <span class="lbl-pc">Copies TP</span><span class="lbl-mob">Copies</span> <span id="badge-copies-top" style="display:none;background:#15803d;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util mob-extra" id="btn-mains-top" type="button" title="File d'attente des élèves ayant levé la main pour demander de l'aide en TP" style="background:#ede9fe;border-color:#6d28d9;color:#6d28d9">🙋‍♂️ <span class="lbl-pc">Mains levées</span><span class="lbl-mob">Aide</span> <span id="badge-mains-top" style="display:none;background:#6d28d9;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util mob-extra" id="btn-palmares-top" type="button" title="Palmarès &amp; Podium par classe (Quiz, Questions Flash et Assiduité)" style="background:linear-gradient(120deg,#fff3b0,#ffd54f);border-color:#23201a;color:#6d4c00">🏆 <span class="lbl-pc">Palmarès</span><span class="lbl-mob">Top 3</span></button>
       <button class="btn-util" id="btn-appel-top" type="button" title="Feuille d'appel &amp; présence automatique du jour par classe (Présents vs Absents)" style="background:#e3f6e8;border-color:#177245;color:#177245">📋 <span class="lbl-pc">Appel / Présence</span><span class="lbl-mob">Appel</span></button>
@@ -1238,6 +1240,22 @@
       <span class="ca-corps">
         <span class="ca-titre">Coffre de Partage TP</span>
         <span class="ca-desc">Distribuer un fichier .zip, .sql, .html à une classe</span>
+      </span>
+    </button>
+
+    <button class="carte-action" id="btn-kahoot-card" type="button">
+      <span class="ca-ico" style="background:linear-gradient(135deg,#a855f7,#6d28d9);color:#fff">📊</span>
+      <span class="ca-corps">
+        <span class="ca-titre">Sondage QCM Live (Kahoot)</span>
+        <span class="ca-desc">Vote A/B/C/D en direct &amp; graphique temps réel</span>
+      </span>
+    </button>
+
+    <button class="carte-action" id="btn-copies-card" type="button">
+      <span class="ca-ico" style="background:linear-gradient(135deg,#22c55e,#15803d);color:#fff">📥</span>
+      <span class="ca-corps">
+        <span class="ca-titre">Copies &amp; TP rendus</span>
+        <span class="ca-desc">Tester le code des élèves &amp; noter sur /20</span>
       </span>
     </button>
 
@@ -2187,6 +2205,125 @@
     </div>
   </div>
 
+  <!-- Boîte modale : 📊 Sondage / Vote QCM en Direct avec Graphique Live (Mode « Kahoot STI ») -->
+  <div class="modal-fond" id="modal-kahoot-live" role="dialog" aria-modal="true">
+    <div class="modal-boite" style="max-width:820px;width:min(820px,96vw);max-height:92dvh;overflow-y:auto;padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:17px">📊 Sondage / Vote QCM en Direct — Mode « Kahoot STI »</h3>
+        <button type="button" id="btn-fermer-kahoot-x" style="border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:34px;height:32px;font-weight:900;cursor:pointer">✕</button>
+      </div>
+
+      <!-- Questions QCM types du Bac STI prêtes en 1 clic -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;background:#f3e8ff;border:1.5px solid #7c3aed;border-radius:12px;padding:8px 11px">
+        <span style="font-size:11.5px;font-weight:900;color:#5b21b6">⚡ Questions Bac STI prêtes :</span>
+        <button type="button" class="btn-tpl-kahoot" data-k="html" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">🌐 HTML5 Form</button>
+        <button type="button" class="btn-tpl-kahoot" data-k="css" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">🎨 CSS3 Flexbox</button>
+        <button type="button" class="btn-tpl-kahoot" data-k="js" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">⚡ JS substring()</button>
+        <button type="button" class="btn-tpl-kahoot" data-k="sql" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">🗄️ SQL HAVING</button>
+        <button type="button" class="btn-tpl-kahoot" data-k="php" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">🐘 PHP mysqli</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:9px">
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">🏫 Classe cible :</label>
+          <select id="kahoot-cible" style="margin-bottom:0">
+            <option value="*">🌐 Toutes les classes</option>
+            <option value="3SI">🏫 Toutes les 3e SI</option>
+            <option value="4SI">🏫 Toutes les 4e SI</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">✅ Bonne réponse (pour le corrigé) :</label>
+          <select id="kahoot-bonne-rep" style="margin-bottom:0;font-weight:900;color:#15803d">
+            <option value="A">🅰️ Réponse A</option>
+            <option value="B" selected>🅱️ Réponse B</option>
+            <option value="C">🅲 Réponse C</option>
+            <option value="D">🅳 Réponse D</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">❓ Question affichée sur les écrans des élèves :</label>
+      <input type="text" id="kahoot-question" value="Que retourne &quot;BacSTI&quot;.substring(3, 6) en JavaScript ?" style="margin-bottom:8px;font-weight:900" />
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="background:#ef4444;color:#fff;font-weight:900;border:2px solid #23201a;border-radius:8px;padding:5px 9px">A</span>
+          <input type="text" id="kahoot-opt-a" value="&quot;Bac&quot;" style="margin-bottom:0" />
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="background:#2563eb;color:#fff;font-weight:900;border:2px solid #23201a;border-radius:8px;padding:5px 9px">B</span>
+          <input type="text" id="kahoot-opt-b" value="&quot;STI&quot;" style="margin-bottom:0" />
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="background:#d97706;color:#fff;font-weight:900;border:2px solid #23201a;border-radius:8px;padding:5px 9px">C</span>
+          <input type="text" id="kahoot-opt-c" value="&quot;cST&quot;" style="margin-bottom:0" />
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="background:#16a34a;color:#fff;font-weight:900;border:2px solid #23201a;border-radius:8px;padding:5px 9px">D</span>
+          <input type="text" id="kahoot-opt-d" value="Erreur" style="margin-bottom:0" />
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" id="btn-kahoot-lancer" style="border:2px solid #23201a;border-radius:999px;padding:8px 18px;font-size:13px;font-weight:900;background:linear-gradient(125deg,#7c3aed,#5b21b6);color:#fff;cursor:pointer;box-shadow:3px 3px 0 #23201a">🚀 Lancer le QCM Live chez les élèves</button>
+          <button type="button" id="btn-kahoot-reveler" style="border:2px solid #23201a;border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:900;background:#dcfce7;color:#166534;cursor:pointer;box-shadow:2px 2px 0 #23201a">🎯 Révéler le corrigé aux élèves</button>
+        </div>
+        <button type="button" id="btn-kahoot-stop" style="border:2px solid #23201a;border-radius:999px;padding:7px 13px;font-size:12px;font-weight:900;background:#fde2e6;color:#c0392b;cursor:pointer">⏹️ Fermer chez les élèves</button>
+      </div>
+
+      <!-- Graphique en barres en temps réel A / B / C / D -->
+      <div style="background:#141a24;color:#f8fafc;border:2.5px solid #23201a;border-radius:16px;padding:14px 16px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <strong style="font-size:13.5px;color:#ffd54f">📊 Résultats des votes en direct (<span id="kahoot-nb-votes">0</span> vote(s) · <span id="kahoot-pct-ok">0 %</span> de réussite)</strong>
+          <span id="kahoot-statut-live" style="font-size:11.5px;color:#94a3b8;font-weight:800">En attente de lancement</span>
+        </div>
+        <div id="kahoot-bars-wrap" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div id="kahoot-liste-votants" style="margin-top:10px;padding-top:8px;border-top:1px solid #2d3748;font-size:11.5px;color:#cbd5e1;max-height:110px;overflow-y:auto"></div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end">
+        <button type="button" id="btn-fermer-kahoot" style="border:2px solid #23201a;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:800;background:#fff;color:#23201a;cursor:pointer">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boîte modale : 📥 Boîte de Réception & Notation des TP / Copies rendus (/20) -->
+  <div class="modal-fond" id="modal-copies-tp" role="dialog" aria-modal="true">
+    <div class="modal-boite" style="max-width:940px;width:min(940px,96vw);max-height:92dvh;overflow-y:auto;padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:17px">📥 Copies &amp; TP rendus par les élèves (<span id="nb-copies-tp">0</span>)</h3>
+        <button type="button" id="btn-fermer-copies-x" style="border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:34px;height:32px;font-weight:900;cursor:pointer">✕</button>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <label style="font-size:12px;font-weight:900">🏫 Filtrer par classe :</label>
+          <select id="copies-filtre-classe" style="margin-bottom:0;width:auto;min-width:180px">
+            <option value="*">🌐 Toutes les classes</option>
+          </select>
+        </div>
+        <button type="button" id="btn-copies-export-csv" style="border:2px solid #23201a;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:900;background:#e3f6e8;color:#177245;cursor:pointer">📥 Exporter les notes TP (CSV Excel)</button>
+      </div>
+
+      <div id="liste-copies-tp-admin" style="display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto;padding:4px 2px"></div>
+
+      <!-- Zone d'aperçu en direct du code de l'élève -->
+      <div id="zone-apercu-copie-tp" hidden style="margin-top:12px;border:2.5px solid #23201a;border-radius:14px;overflow:hidden;background:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#23201a;color:#fff;font-size:12.5px;font-weight:900">
+          <span id="titre-apercu-copie-tp">▶️ Exécution de la copie</span>
+          <button type="button" id="btn-fermer-apercu-copie" style="border:1.5px solid #fff;background:#c0392b;color:#fff;border-radius:6px;padding:2px 8px;font-weight:900;cursor:pointer">✕ Fermer l'aperçu</button>
+        </div>
+        <iframe id="iframe-apercu-copie-tp" sandbox="allow-scripts" style="width:100%;height:260px;border:0;background:#fff"></iframe>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:12px;border-top:2px solid #e7dcc8;padding-top:10px">
+        <button type="button" id="btn-fermer-copies" style="border:2px solid #23201a;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:800;background:#fff;color:#23201a;cursor:pointer">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Boîte de configuration des notifications de nouvelles demandes -->
   <div class="modal-fond" id="modal-notif" role="dialog" aria-modal="true">
     <div class="modal-boite">
@@ -2466,6 +2603,7 @@
         <button type="button" id="btn-msg-depuis-fiche" style="background:#fff3e0;color:#d84315;border-color:#d84315">📩 Message / Répondre</button>
         <button type="button" id="btn-modifier-depuis-fiche">✏️ Modifier</button>
         <button type="button" id="btn-imprimer-fiche">🖨️ Imprimer</button>
+        <button type="button" id="btn-fiche-bulletin-pdf" style="background:linear-gradient(125deg,#1e3a8a,#2563eb);color:#fff;border-color:#23201a;font-weight:900">📄 Bulletin PDF A4</button>
         <button type="button" class="btn-valider" id="btn-export-fiche-csv">📥 Exporter Bilan (CSV)</button>
       </div>
     </div>
@@ -2762,7 +2900,7 @@
 </script>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=113"></script>
-<script src="assets/js/admin.js?v=113"></script>
+<script src="assets/js/config.js?v=114"></script>
+<script src="assets/js/admin.js?v=114"></script>
 </body>
 </html>

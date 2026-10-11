@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noai, noimageai" />
 <link rel="icon" href="assets/icons/STI_by_AE.ico" />
-<link rel="stylesheet" href="assets/css/protection.css?v=113" />
+<link rel="stylesheet" href="assets/css/protection.css?v=114" />
 <title>🧪 Atelier Épreuve Pratique Bac STI — STI By A'e V2.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -201,9 +201,9 @@
   <div class="eval-box" id="zone-eval"></div>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=113"></script>
-<script src="assets/js/protection.js?v=113"></script>
-<script src="assets/js/acces.js?v=113"></script>
+<script src="assets/js/config.js?v=114"></script>
+<script src="assets/js/protection.js?v=114"></script>
+<script src="assets/js/acces.js?v=114"></script>
 <script>
 (function () {
   "use strict";
@@ -400,7 +400,17 @@
     if (window.enregistrerScoreQuizSTI) {
       var nomSujet = "Bac Pratique (" + selSujet.value.toUpperCase() + ")";
       window.enregistrerScoreQuizSTI(nomSujet, note + "/20", note);
-      document.getElementById("statut-envoi").textContent = "✅ Note " + note + "/20 transmise au tableau de bord du professeur !";
+      document.getElementById("statut-envoi").textContent = "✅ Note " + note + "/20 et copie transmises au tableau de bord du professeur !";
+    }
+    if (window.__stiEnvoyerCopieTpAuProf) {
+      window.__stiEnvoyerCopieTpAuProf({
+        typeTp: "Bac Pratique (" + selSujet.value.toUpperCase() + " — auto: " + note + "/20)",
+        html: h,
+        css: c,
+        js: j,
+        sql: sp,
+        codeComplet: "--- HTML ---\n" + h + "\n--- CSS ---\n" + c + "\n--- JS ---\n" + j + "\n--- SQL & PHP ---\n" + sp
+      });
     }
   });
 

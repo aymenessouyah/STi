@@ -1218,6 +1218,30 @@
     });
     pan.appendChild(btnConstructeurPan);
 
+    var btnLaboSqlPan = document.createElement("button");
+    btnLaboSqlPan.type = "button";
+    btnLaboSqlPan.textContent = "🗄️ Labo SQL (Mini-phpMyAdmin)";
+    btnLaboSqlPan.style.cssText = "display:block;width:100%;margin:6px 0 0 auto;border:1.5px solid #0284c7;background:#e0f2fe;color:#0369a1;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11.5px;cursor:pointer;";
+    btnLaboSqlPan.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fermer();
+      if (window.ouvrirSimulateurSqlSTI) window.ouvrirSimulateurSqlSTI();
+    });
+    pan.appendChild(btnLaboSqlPan);
+
+    var btnLaboAsciiPan = document.createElement("button");
+    btnLaboAsciiPan.type = "button";
+    btnLaboAsciiPan.textContent = "🔤 Chaînes & ASCII JS (Annexe)";
+    btnLaboAsciiPan.style.cssText = "display:block;width:100%;margin:6px 0 0 auto;border:1.5px solid #b45309;background:#fffbeb;color:#92400e;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11.5px;cursor:pointer;";
+    btnLaboAsciiPan.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fermer();
+      if (window.ouvrirLaboChainesAsciiSTI) window.ouvrirLaboChainesAsciiSTI();
+    });
+    pan.appendChild(btnLaboAsciiPan);
+
     var btnSimPhpSqlPan = document.createElement("button");
     btnSimPhpSqlPan.type = "button";
     btnSimPhpSqlPan.textContent = "🔗 Simulateur Form ➔ PHP ➔ SQL";
@@ -2839,6 +2863,10 @@
                   if (!dernierTbLive || Number(a.ts || 0) >= Number(dernierTbLive.ts || 0)) dernierTbLive = a;
                 } else if (a && a.type === "coffre_tp") {
                   if (typeof window.__stiTraiterSignalCoffreTp === "function") window.__stiTraiterSignalCoffreTp(a, true);
+                } else if (a && a.type === "kahoot_q") {
+                  if (typeof window.__stiAfficherKahootEleve === "function") window.__stiAfficherKahootEleve(a, uid);
+                } else if (a && a.type === "copie_note" && a.uid === uid) {
+                  if (typeof window.__stiAfficherNoteCopieEleve === "function") window.__stiAfficherNoteCopieEleve(a);
                 } else if (a && a.type === "sec_config") {
                   if (!dernierSecCfg || Number(a.ts || 0) >= Number(dernierSecCfg.ts || 0)) dernierSecCfg = a;
                 } else if (a && a.type === "session_unique" && a.uid === uid) {
@@ -2884,6 +2912,16 @@
         .on("broadcast", { event: "coffre_tp" }, function (p) {
           if (p && p.payload && typeof window.__stiTraiterSignalCoffreTp === "function") {
             window.__stiTraiterSignalCoffreTp(p.payload, false);
+          }
+        })
+        .on("broadcast", { event: "kahoot_q" }, function (p) {
+          if (p && p.payload && typeof window.__stiAfficherKahootEleve === "function") {
+            window.__stiAfficherKahootEleve(p.payload, uid);
+          }
+        })
+        .on("broadcast", { event: "copie_note" }, function (p) {
+          if (p && p.payload && p.payload.uid === uid && typeof window.__stiAfficherNoteCopieEleve === "function") {
+            window.__stiAfficherNoteCopieEleve(p.payload);
           }
         })
         .on("broadcast", { event: "sec_config" }, function (p) {
@@ -6254,6 +6292,15 @@
           (codeState.js ? ("JS : " + codeState.js.trim().slice(0, 140)) : "");
         var cLoc = lireCacheSessionLocal() || {};
         var uidEl = currentUid || cLoc.id || "offline-user";
+        if (typeof window.__stiEnvoyerCopieTpAuProf === "function") {
+          window.__stiEnvoyerCopieTpAuProf({
+            typeTp: "Bac à sable HTML/CSS/JS",
+            html: codeState.html || "",
+            css: codeState.css || "",
+            js: codeState.js || "",
+            codeComplet: "--- HTML ---\n" + (codeState.html || "") + "\n--- CSS ---\n" + (codeState.css || "") + "\n--- JS ---\n" + (codeState.js || "")
+          });
+        }
         var nowIso = new Date().toISOString();
         var rowMsg = {
           user_id: uidEl,
@@ -8317,5 +8364,925 @@
   } else {
     setTimeout(synchroniserCoffreTpDepuisServeur, 400);
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     📥 ENVOI STRUCTURÉ DE COPIE TP & RÉCEPTION DE LA NOTE /20 EN DIRECT
+     ══════════════════════════════════════════════════════════════════════════ */
+  window.__stiEnvoyerCopieTpAuProf = function (donneesCopie) {
+    if (!donneesCopie) return;
+    var cLoc = lireCacheSessionLocal() || {};
+    var uidEl = currentUid || cLoc.id || "offline-user";
+    var nomEl = ((cLoc.nom || "") + " " + (cLoc.prenom || "")).trim() || cLoc.email || cLoc.phone || "Élève";
+    var clEl = currentClasse || cLoc.classe || "—";
+    var idCp = "cp_" + Date.now() + "_" + String(uidEl).slice(0, 6);
+    var payload = {
+      type: "copie_tp",
+      id: idCp,
+      uid: uidEl,
+      nom: nomEl,
+      classe: clEl,
+      typeTp: donneesCopie.typeTp || "TP STI",
+      html: donneesCopie.html || "",
+      css: donneesCopie.css || "",
+      js: donneesCopie.js || "",
+      sql: donneesCopie.sql || "",
+      codeComplet: donneesCopie.codeComplet || "",
+      ts: Date.now()
+    };
+    var row = {
+      user_id: uidEl,
+      page: "COPIE_TP:" + idCp,
+      lieu: JSON.stringify(payload),
+      debut: new Date().toISOString(),
+      fin: new Date().toISOString(),
+      duree_sec: 0
+    };
+    if (navigator.onLine && uidEl !== "offline-user") {
+      sb.from("acces").insert(row).then(function (r) {
+        if (r && r.error) empilerHorsLigne(row);
+      });
+      try {
+        sb.channel("sti-diffusion").send({ type: "broadcast", event: "copie_tp", payload: payload });
+      } catch (e) {}
+      fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }).catch(function () {});
+    } else {
+      empilerHorsLigne(row);
+    }
+  };
+
+  window.__stiAfficherNoteCopieEleve = function (payload) {
+    if (!payload || payload.note == null) return;
+    var cleVus = "sti-notes-copies-vues-v1";
+    var vus = {};
+    try { vus = JSON.parse(localStorage.getItem(cleVus) || "{}"); } catch (e) {}
+    var k = (payload.idCopie || "cp") + "_" + String(payload.ts || "");
+    if (vus[k]) return;
+    vus[k] = 1;
+    try { localStorage.setItem(cleVus, JSON.stringify(vus)); } catch (e) {}
+
+    var ex = document.getElementById("sti-banniere-note-copie");
+    if (ex) ex.remove();
+
+    var ban = document.createElement("div");
+    ban.id = "sti-banniere-note-copie";
+    ban.className = "sti-no-print";
+    ban.style.cssText =
+      "position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:2147483647;" +
+      "width:min(480px,94vw);background:#fffdf7;color:#23201a;border:3px solid #23201a;border-radius:18px;" +
+      "padding:14px 16px;box-shadow:6px 6px 0 #15803d,0 14px 32px rgba(0,0,0,.35);font:700 13px/1.45 system-ui,'Segoe UI',sans-serif;color-scheme:light;";
+    ban.innerHTML =
+      "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px'>" +
+        "<span style='background:#dcfce7;color:#166534;border:1.5px solid #23201a;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:900'>📥 Votre copie TP a été corrigée par M. Essouyah !</span>" +
+        "<button type='button' id='sti-note-cp-close' style='border:1.5px solid #23201a;background:#c0392b;color:#fff;border-radius:8px;width:28px;height:26px;font-weight:900;cursor:pointer'>✕</button>" +
+      "</div>" +
+      "<div style='font-size:15px;font-weight:900;color:#23201a;margin-bottom:4px'>" +
+        "TP : " + esc(payload.typeTp || "TP STI") + " — Note : <span style='color:#15803d;font-size:17px'>" + esc(String(payload.note)) + " / 20</span>" +
+      "</div>" +
+      (payload.obs ? "<div style='font-size:12.5px;background:#f9f1e3;border:1.5px solid #23201a;border-radius:10px;padding:8px 10px;margin-top:6px'>💬 <b>Observation du Professeur :</b> " + esc(payload.obs) + "</div>" : "");
+
+    (document.body || document.documentElement).appendChild(ban);
+    ban.querySelector("#sti-note-cp-close").addEventListener("click", function () { ban.remove(); });
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     📊 3. VOTE QCM LIVE CÔTÉ ÉLÈVE (Mode « Kahoot STI » : A / B / C / D)
+     ══════════════════════════════════════════════════════════════════════════ */
+  window.__stiAfficherKahootEleve = function (payload, uid) {
+    if (!payload || estDansIframeModale() || estSessionAdminVerifiee()) return;
+    var ex = document.getElementById("sti-modal-kahoot-eleve");
+    if (payload.actif === false) {
+      if (ex) ex.remove();
+      return;
+    }
+    var cLoc = lireCacheSessionLocal() || {};
+    var maCl = String(currentClasse || cLoc.classe || "").trim().toUpperCase();
+    var cible = String(payload.cible || "*").trim().toUpperCase();
+    var pourMoi =
+      cible === "*" ||
+      maCl === "ELEVELABO3" ||
+      (cible === "3SI" && maCl.indexOf("3") === 0) ||
+      (cible === "4SI" && maCl.indexOf("4") === 0) ||
+      maCl === cible;
+    if (!pourMoi) return;
+
+    if (ex) ex.remove();
+
+    var cleVotes = "sti-kahoot-votes-eleve-v1";
+    var mesVotes = {};
+    try { mesVotes = JSON.parse(localStorage.getItem(cleVotes) || "{}"); } catch (e) {}
+    var monChoix = mesVotes[payload.id] || "";
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-kahoot-eleve";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(13,18,30,.82);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:14px;font:700 13.5px/1.45 system-ui,'Segoe UI',sans-serif;";
+
+    var boite = document.createElement("div");
+    boite.style.cssText = "background:#141a24;color:#f8fafc;border:3px solid #a855f7;border-radius:22px;max-width:580px;width:100%;padding:18px 20px;box-shadow:0 20px 50px rgba(0,0,0,.6);";
+
+    var couleurs = { A: "#ef4444", B: "#2563eb", C: "#d97706", D: "#16a34a" };
+    var opts = payload.options || { A: "A", B: "B", C: "C", D: "D" };
+
+    function peindreKahootEleve() {
+      var htmlBtns = ["A", "B", "C", "D"].map(function (lettre) {
+        var estChoisi = monChoix === lettre;
+        var estBonne = payload.revele && payload.bonneRep === lettre;
+        var bord = estBonne ? "3px solid #fde047" : (estChoisi ? "3px solid #fff" : "2px solid rgba(255,255,255,.2)");
+        var op = (payload.revele && !estBonne && !estChoisi) ? "0.45" : "1";
+        return (
+          "<button type='button' data-k-opt='" + lettre + "' " + (monChoix || payload.revele ? "disabled" : "") + " style='display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:" + bord + ";background:" + couleurs[lettre] + ";color:#fff;font-size:14px;font-weight:900;cursor:" + (monChoix || payload.revele ? "default" : "pointer") + ";opacity:" + op + ";text-align:left;box-shadow:0 4px 0 rgba(0,0,0,.35)'>" +
+            "<span style='width:30px;height:30px;border-radius:8px;background:rgba(0,0,0,.28);display:grid;place-items:center;flex-shrink:0'>" + lettre + "</span>" +
+            "<span style='flex:1'>" + esc(opts[lettre] || lettre) + "</span>" +
+            (estChoisi ? "<span>👈 Mon vote</span>" : "") +
+            (estBonne ? "<span>✅ Corrigé</span>" : "") +
+          "</button>"
+        );
+      }).join("");
+
+      var msgBas = "";
+      if (payload.revele) {
+        var gagne = monChoix && monChoix === payload.bonneRep;
+        msgBas = "<div style='margin-top:12px;padding:10px 12px;border-radius:12px;background:" + (gagne ? "rgba(34,197,94,.2)" : "rgba(234,179,8,.2)") + ";border:1.5px solid " + (gagne ? "#22c55e" : "#eab308") + ";text-align:center;font-weight:900'>" +
+          (gagne ? "🎉 Bravo ! Vous aviez trouvé la bonne réponse (" + payload.bonneRep + ") !" : "🎯 La bonne réponse était la réponse " + esc(payload.bonneRep) + " : " + esc(opts[payload.bonneRep] || "")) +
+        "</div>";
+      } else if (monChoix) {
+        msgBas = "<div style='margin-top:12px;text-align:center;color:#fde047;font-weight:900'>✅ Vote enregistré (« " + monChoix + " ») ! En attente du corrigé du professeur…</div>";
+      }
+
+      boite.innerHTML =
+        "<div style='display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px'>" +
+          "<span style='background:#7c3aed;color:#fff;border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:900'>📊 Sondage QCM en Direct — Kahoot STI</span>" +
+          "<button type='button' id='sti-k-el-close' style='border:1.5px solid #fff;background:#ef4444;color:#fff;border-radius:8px;width:30px;height:28px;font-weight:900;cursor:pointer'>✕</button>" +
+        "</div>" +
+        "<div style='font-size:16px;font-weight:900;color:#fff;background:#1e293b;border:1.5px solid #475569;border-radius:14px;padding:12px 14px;margin-bottom:12px'>" +
+          esc(payload.question || "Question QCM") +
+        "</div>" +
+        "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px'>" + htmlBtns + "</div>" +
+        msgBas;
+
+      boite.querySelector("#sti-k-el-close").addEventListener("click", function () { fond.remove(); });
+      boite.querySelectorAll("button[data-k-opt]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (monChoix || payload.revele) return;
+          monChoix = btn.getAttribute("data-k-opt");
+          mesVotes[payload.id] = monChoix;
+          try { localStorage.setItem(cleVotes, JSON.stringify(mesVotes)); } catch (e) {}
+          peindreKahootEleve();
+
+          var uidV = uid || currentUid || cLoc.id || "eleve";
+          var nomV = ((cLoc.nom || "") + " " + (cLoc.prenom || "")).trim() || cLoc.email || cLoc.phone || "Élève";
+          var repPayload = {
+            type: "kahoot_rep",
+            idQ: payload.id,
+            uid: uidV,
+            nom: nomV,
+            classe: currentClasse || cLoc.classe || "—",
+            choix: monChoix,
+            ts: Date.now()
+          };
+          sb.from("acces").insert({
+            user_id: uidV,
+            page: "KAHOOT_REP:" + payload.id,
+            lieu: JSON.stringify(repPayload),
+            duree_sec: 0
+          }).then(function () {});
+          try {
+            sb.channel("sti-diffusion").send({ type: "broadcast", event: "kahoot_rep", payload: repPayload });
+          } catch (e) {}
+          fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+            method: "POST",
+            body: JSON.stringify(repPayload)
+          }).catch(function () {});
+        });
+      });
+    }
+
+    peindreKahootEleve();
+    fond.appendChild(boite);
+    (document.body || document.documentElement).appendChild(fond);
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🗄️ 1. SIMULATEUR SQL INTERACTIF 100 % HORS-LIGNE (« MINI-PHPMYADMIN STI »)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var BASES_SQL_STI = {
+    location: {
+      titre: "🚗 Base 1 : Location de voitures (bd_location)",
+      tables: {
+        client: {
+          pk: "cin",
+          colonnes: ["cin", "nom", "prenom", "tel", "ville"],
+          lignes: [
+            { cin: "12345678", nom: "Ben Ali", prenom: "Mohamed", tel: "98111222", ville: "Tunis" },
+            { cin: "87654321", nom: "Trabelsi", prenom: "Sami", tel: "55333444", ville: "Sousse" },
+            { cin: "11223344", nom: "Gharbi", prenom: "Ines", tel: "22444555", ville: "Tunis" },
+            { cin: "99887766", nom: "Mansouri", prenom: "Youssef", tel: "50666777", ville: "Sfax" }
+          ]
+        },
+        voiture: {
+          pk: "immat",
+          colonnes: ["immat", "marque", "prix_jour", "disponible"],
+          lignes: [
+            { immat: "210 TU 4589", marque: "Clio 5", prix_jour: 95, disponible: "O" },
+            { immat: "225 TU 1024", marque: "Golf 8", prix_jour: 140, disponible: "O" },
+            { immat: "198 TU 7788", marque: "Peugeot 208", prix_jour: 85, disponible: "N" },
+            { immat: "230 TU 9001", marque: "Seat Ibiza", prix_jour: 110, disponible: "O" }
+          ]
+        },
+        location: {
+          pk: "id_loc",
+          fk: "cin ➔ client, immat ➔ voiture",
+          colonnes: ["id_loc", "cin", "immat", "date_loc", "nb_jours"],
+          lignes: [
+            { id_loc: 1, cin: "12345678", immat: "210 TU 4589", date_loc: "2026-03-10", nb_jours: 4 },
+            { id_loc: 2, cin: "87654321", immat: "225 TU 1024", date_loc: "2026-03-15", nb_jours: 2 },
+            { id_loc: 3, cin: "12345678", immat: "198 TU 7788", date_loc: "2026-04-02", nb_jours: 5 },
+            { id_loc: 4, cin: "11223344", immat: "230 TU 9001", date_loc: "2026-04-12", nb_jours: 3 }
+          ]
+        }
+      },
+      exemples: [
+        { lbl: "1. SELECT + WHERE + ORDER BY", sql: "SELECT immat, marque, prix_jour FROM voiture WHERE disponible = 'O' ORDER BY prix_jour DESC;" },
+        { lbl: "2. Jointure (2 tables)", sql: "SELECT c.nom, c.prenom, l.immat, l.nb_jours FROM client c, location l WHERE c.cin = l.cin;" },
+        { lbl: "3. GROUP BY + COUNT(*)", sql: "SELECT cin, COUNT(*) AS nb_locations, SUM(nb_jours) AS total_jours FROM location GROUP BY cin;" },
+        { lbl: "4. Sous-requête NOT IN", sql: "SELECT nom, prenom, ville FROM client WHERE cin NOT IN (SELECT cin FROM location);" },
+        { lbl: "5. INSERT INTO", sql: "INSERT INTO voiture VALUES ('235 TU 5500', 'Hyundai i20', 100, 'O');" },
+        { lbl: "6. UPDATE SET", sql: "UPDATE voiture SET prix_jour = 90 WHERE immat = '198 TU 7788';" }
+      ]
+    },
+    biblio: {
+      titre: "📚 Base 2 : Gestion de bibliothèque (bd_biblio)",
+      tables: {
+        adherent: {
+          pk: "id_adh",
+          colonnes: ["id_adh", "nom", "classe", "email"],
+          lignes: [
+            { id_adh: "A01", nom: "Salma Mejri", classe: "4SI1", email: "salma@sti.tn" },
+            { id_adh: "A02", nom: "Rami Khelil", classe: "4SI2", email: "rami@sti.tn" },
+            { id_adh: "A03", nom: "Nour Ayari", classe: "3SI1", email: "nour@sti.tn" }
+          ]
+        },
+        livre: {
+          pk: "code_liv",
+          colonnes: ["code_liv", "titre", "domaine", "nb_ex"],
+          lignes: [
+            { code_liv: "L10", titre: "Maîtriser SQL & MySQL", domaine: "BD", nb_ex: 5 },
+            { code_liv: "L20", titre: "JavaScript pour le Bac STI", domaine: "Web", nb_ex: 3 },
+            { code_liv: "L30", titre: "HTML5 & CSS3 Moderne", domaine: "Web", nb_ex: 4 }
+          ]
+        },
+        emprunt: {
+          pk: "num_emp",
+          fk: "id_adh ➔ adherent, code_liv ➔ livre",
+          colonnes: ["num_emp", "id_adh", "code_liv", "date_emp", "rendu"],
+          lignes: [
+            { num_emp: 1, id_adh: "A01", code_liv: "L10", date_emp: "2026-02-14", rendu: "O" },
+            { num_emp: 2, id_adh: "A02", code_liv: "L20", date_emp: "2026-03-01", rendu: "N" },
+            { num_emp: 3, id_adh: "A01", code_liv: "L30", date_emp: "2026-03-19", rendu: "N" }
+          ]
+        }
+      },
+      exemples: [
+        { lbl: "1. Livres du domaine Web", sql: "SELECT code_liv, titre, nb_ex FROM livre WHERE domaine = 'Web' ORDER BY nb_ex DESC;" },
+        { lbl: "2. Emprunts non rendus", sql: "SELECT a.nom, a.classe, e.code_liv, e.date_emp FROM adherent a, emprunt e WHERE a.id_adh = e.id_adh AND e.rendu = 'N';" },
+        { lbl: "3. GROUP BY domaine", sql: "SELECT domaine, COUNT(*) AS nb_titres, SUM(nb_ex) AS total_exemplaires FROM livre GROUP BY domaine;" }
+      ]
+    }
+  };
+
+  function clonerBaseSql(cle) {
+    return JSON.parse(JSON.stringify(BASES_SQL_STI[cle] || BASES_SQL_STI.location));
+  }
+
+  function executerRequeteSqlLocale(db, sqlBrut) {
+    var q = String(sqlBrut || "").trim().replace(/;+\s*$/, "").trim();
+    if (!q) return { erreur: "Veuillez saisir une requête SQL." };
+
+    /* 1. INSERT INTO table VALUES (...) */
+    var mIns = q.match(/^INSERT\s+INTO\s+([a-zA-Z0-9_]+)\s*(?:\(([^)]+)\))?\s*VALUES\s*\(([\s\S]+)\)$/i);
+    if (mIns) {
+      var nomT = mIns[1].toLowerCase();
+      var tbl = db.tables[nomT];
+      if (!tbl) return { erreur: "Table « " + nomT + " » introuvable dans la base." };
+      var colsCibles = mIns[2]
+        ? mIns[2].split(",").map(function (s) { return s.trim(); })
+        : tbl.colonnes;
+      var valsBrutes = mIns[3].match(/(?:'[^']*'|[^,]+)+/g) || [];
+      var vals = valsBrutes.map(function (v) {
+        var s = v.trim();
+        if ((s[0] === "'" && s[s.length - 1] === "'") || (s[0] === '"' && s[s.length - 1] === '"')) {
+          return s.substring(1, s.length - 1);
+        }
+        return isNaN(Number(s)) ? s : Number(s);
+      });
+      if (vals.length !== colsCibles.length) {
+        return { erreur: "Le nombre de valeurs (" + vals.length + ") ne correspond pas au nombre de colonnes (" + colsCibles.length + ")." };
+      }
+      var nvObj = {};
+      colsCibles.forEach(function (c, idx) { nvObj[c] = vals[idx]; });
+      tbl.lignes.push(nvObj);
+      return {
+        message: "✅ 1 ligne insérée avec succès dans la table « " + nomT + " » (mysqli_affected_rows = 1).",
+        colonnes: tbl.colonnes,
+        lignes: tbl.lignes
+      };
+    }
+
+    /* 2. DELETE FROM table [WHERE ...] */
+    var mDel = q.match(/^DELETE\s+FROM\s+([a-zA-Z0-9_]+)(?:\s+WHERE\s+([\s\S]+))?$/i);
+    if (mDel) {
+      var nomTd = mDel[1].toLowerCase();
+      var tblD = db.tables[nomTd];
+      if (!tblD) return { erreur: "Table « " + nomTd + " » introuvable." };
+      var condDel = mDel[2] || "";
+      var av = tblD.lignes.length;
+      tblD.lignes = tblD.lignes.filter(function (row) {
+        return condDel ? !evaluerWhereSql(row, condDel, db) : false;
+      });
+      var suppr = av - tblD.lignes.length;
+      return {
+        message: "✅ " + suppr + " ligne(s) supprimée(s) de « " + nomTd + " » (mysqli_affected_rows = " + suppr + ").",
+        colonnes: tblD.colonnes,
+        lignes: tblD.lignes
+      };
+    }
+
+    /* 3. UPDATE table SET col = val [WHERE ...] */
+    var mUpd = q.match(/^UPDATE\s+([a-zA-Z0-9_]+)\s+SET\s+([\s\S]+?)(?:\s+WHERE\s+([\s\S]+))?$/i);
+    if (mUpd) {
+      var nomTu = mUpd[1].toLowerCase();
+      var tblU = db.tables[nomTu];
+      if (!tblU) return { erreur: "Table « " + nomTu + " » introuvable." };
+      var affs = mUpd[2].split(",");
+      var condUpd = mUpd[3] || "";
+      var nbMod = 0;
+      tblU.lignes.forEach(function (row) {
+        if (!condUpd || evaluerWhereSql(row, condUpd, db)) {
+          nbMod++;
+          affs.forEach(function (af) {
+            var p = af.split("=");
+            if (p.length >= 2) {
+              var c = p[0].trim();
+              var v = p.slice(1).join("=").trim();
+              if ((v[0] === "'" && v[v.length - 1] === "'") || (v[0] === '"' && v[v.length - 1] === '"')) {
+                v = v.substring(1, v.length - 1);
+              } else if (!isNaN(Number(v))) {
+                v = Number(v);
+              }
+              row[c] = v;
+            }
+          });
+        }
+      });
+      return {
+        message: "✅ " + nbMod + " ligne(s) mise(s) à jour dans « " + nomTu + " » (mysqli_affected_rows = " + nbMod + ").",
+        colonnes: tblU.colonnes,
+        lignes: tblU.lignes
+      };
+    }
+
+    /* 4. SELECT ... FROM ... */
+    var mSel = q.match(/^SELECT\s+(DISTINCT\s+)?([\s\S]+?)\s+FROM\s+([\s\S]+)$/i);
+    if (!mSel) {
+      return { erreur: "Syntaxe SQL non reconnue. Utilisez SELECT ... FROM ..., INSERT INTO ..., UPDATE ... SET ... ou DELETE FROM ..." };
+    }
+    var estDistinct = Boolean(mSel[1]);
+    var projStr = mSel[2].trim();
+    var reste = mSel[3].trim();
+
+    var orderStr = "", havingStr = "", groupStr = "", whereStr = "";
+    var mOrd = reste.match(/^([\s\S]+?)\s+ORDER\s+BY\s+([\s\S]+)$/i);
+    if (mOrd) { reste = mOrd[1].trim(); orderStr = mOrd[2].trim(); }
+    var mHav = reste.match(/^([\s\S]+?)\s+HAVING\s+([\s\S]+)$/i);
+    if (mHav) { reste = mHav[1].trim(); havingStr = mHav[2].trim(); }
+    var mGrp = reste.match(/^([\s\S]+?)\s+GROUP\s+BY\s+([\s\S]+)$/i);
+    if (mGrp) { reste = mGrp[1].trim(); groupStr = mGrp[2].trim(); }
+    var mWh = reste.match(/^([\s\S]+?)\s+WHERE\s+([\s\S]+)$/i);
+    if (mWh) { reste = mWh[1].trim(); whereStr = mWh[2].trim(); }
+
+    var fromStr = reste.replace(/\s+(?:INNER\s+)?JOIN\s+/gi, ", ").replace(/\s+ON\s+([^\s,]+\s*=\s*[^\s,]+)/gi, function (_, condOn) {
+      whereStr = whereStr ? ("(" + whereStr + ") AND (" + condOn + ")") : condOn;
+      return "";
+    });
+
+    var specsTables = fromStr.split(",").map(function (s) {
+      var parts = s.trim().split(/\s+/);
+      var nom = (parts[0] || "").toLowerCase();
+      var alias = (parts[1] || nom).toLowerCase();
+      return { nom: nom, alias: alias };
+    });
+
+    for (var ti = 0; ti < specsTables.length; ti++) {
+      if (!db.tables[specsTables[ti].nom]) {
+        return { erreur: "Table « " + specsTables[ti].nom + " » inconnue dans cette base." };
+      }
+    }
+
+    /* Produit cartésien des tables du FROM */
+    var lignesComb = [{}];
+    specsTables.forEach(function (sp) {
+      var t = db.tables[sp.nom];
+      var suiv = [];
+      lignesComb.forEach(function (acc) {
+        t.lignes.forEach(function (r) {
+          var nr = Object.assign({}, acc);
+          Object.keys(r).forEach(function (k) {
+            if (nr[k] === undefined) nr[k] = r[k];
+            nr[sp.alias + "." + k] = r[k];
+            nr[sp.nom + "." + k] = r[k];
+          });
+          suiv.push(nr);
+        });
+      });
+      lignesComb = suiv;
+    });
+
+    if (whereStr) {
+      lignesComb = lignesComb.filter(function (row) {
+        return evaluerWhereSql(row, whereStr, db);
+      });
+    }
+
+    var exprsProj = projStr.split(",").map(function (s) { return s.trim(); });
+    var aAgregation = /COUNT\s*\(|SUM\s*\(|AVG\s*\(|MIN\s*\(|MAX\s*\(/i.test(projStr);
+
+    var lignesFinales = [];
+    var colsFinales = [];
+
+    if (groupStr || aAgregation) {
+      var colsGroup = groupStr ? groupStr.split(",").map(function (s) { return s.trim(); }) : [];
+      var groupes = {};
+      lignesComb.forEach(function (r) {
+        var cleG = colsGroup.map(function (cg) { return String(lireValColSql(r, cg)); }).join("||");
+        if (!groupes[cleG]) groupes[cleG] = [];
+        groupes[cleG].push(r);
+      });
+      if (!Object.keys(groupes).length && !groupStr) {
+        groupes[""] = [];
+      }
+      Object.keys(groupes).forEach(function (cleG) {
+        var grpRows = groupes[cleG];
+        var objRes = {};
+        exprsProj.forEach(function (ex) {
+          var pAs = ex.split(/\s+AS\s+/i);
+          var exprBrut = pAs[0].trim();
+          var nomCol = (pAs[1] || exprBrut).trim().replace(/^[a-zA-Z0-9_]+\./, "");
+          if (colsFinales.indexOf(nomCol) === -1) colsFinales.push(nomCol);
+          var valG = evaluerAgregationSql(grpRows, exprBrut);
+          objRes[nomCol] = valG;
+          objRes[exprBrut] = valG;
+        });
+        if (!havingStr || evaluerWhereSql(objRes, havingStr, db)) {
+          lignesFinales.push(objRes);
+        }
+      });
+    } else {
+      if (projStr === "*") {
+        specsTables.forEach(function (sp) {
+          db.tables[sp.nom].colonnes.forEach(function (c) {
+            if (colsFinales.indexOf(c) === -1) colsFinales.push(c);
+          });
+        });
+        lignesFinales = lignesComb;
+      } else {
+        lignesComb.forEach(function (r) {
+          var objR = {};
+          exprsProj.forEach(function (ex) {
+            var pAs = ex.split(/\s+AS\s+/i);
+            var exprBrut = pAs[0].trim();
+            var nomCol = (pAs[1] || exprBrut).trim().replace(/^[a-zA-Z0-9_]+\./, "");
+            if (colsFinales.indexOf(nomCol) === -1) colsFinales.push(nomCol);
+            objR[nomCol] = lireValColSql(r, exprBrut);
+          });
+          lignesFinales.push(objR);
+        });
+      }
+    }
+
+    if (estDistinct) {
+      var vusD = {};
+      lignesFinales = lignesFinales.filter(function (r) {
+        var k = colsFinales.map(function (c) { return String(r[c]); }).join("||");
+        if (vusD[k]) return false;
+        vusD[k] = 1;
+        return true;
+      });
+    }
+
+    if (orderStr) {
+      var pOrd = orderStr.split(",")[0].trim().split(/\s+/);
+      var colOrd = pOrd[0].replace(/^[a-zA-Z0-9_]+\./, "");
+      var desc = (pOrd[1] || "").toUpperCase() === "DESC";
+      lignesFinales.sort(function (a, b) {
+        var va = a[colOrd] !== undefined ? a[colOrd] : lireValColSql(a, pOrd[0]);
+        var vb = b[colOrd] !== undefined ? b[colOrd] : lireValColSql(b, pOrd[0]);
+        if (va < vb) return desc ? 1 : -1;
+        if (va > vb) return desc ? -1 : 1;
+        return 0;
+      });
+    }
+
+    return {
+      colonnes: colsFinales,
+      lignes: lignesFinales
+    };
+  }
+
+  function lireValColSql(row, expr) {
+    if (!row) return null;
+    var e = String(expr || "").trim();
+    if (row[e] !== undefined) return row[e];
+    var sansPref = e.replace(/^[a-zA-Z0-9_]+\./, "");
+    if (row[sansPref] !== undefined) return row[sansPref];
+    var mYear = e.match(/^YEAR\s*\(([^)]+)\)$/i);
+    if (mYear) {
+      var d = String(lireValColSql(row, mYear[1]) || "");
+      return Number(d.substring(0, 4)) || 0;
+    }
+    var mUp = e.match(/^UPPER\s*\(([^)]+)\)$/i);
+    if (mUp) return String(lireValColSql(row, mUp[1]) || "").toUpperCase();
+    var mLo = e.match(/^LOWER\s*\(([^)]+)\)$/i);
+    if (mLo) return String(lireValColSql(row, mLo[1]) || "").toLowerCase();
+    if ((e[0] === "'" && e[e.length - 1] === "'") || (e[0] === '"' && e[e.length - 1] === '"')) {
+      return e.substring(1, e.length - 1);
+    }
+    if (!isNaN(Number(e))) return Number(e);
+    return row[e];
+  }
+
+  function evaluerAgregationSql(grpRows, expr) {
+    var e = String(expr || "").trim();
+    if (/^COUNT\s*\(\s*\*\s*\)$/i.test(e)) return grpRows.length;
+    var mFn = e.match(/^(COUNT|SUM|AVG|MIN|MAX)\s*\(([^)]+)\)$/i);
+    if (mFn) {
+      var fn = mFn[1].toUpperCase();
+      var col = mFn[2].trim();
+      var vals = grpRows.map(function (r) { return lireValColSql(r, col); }).filter(function (v) { return v !== undefined && v !== null; });
+      if (fn === "COUNT") return vals.length;
+      var nums = vals.map(Number).filter(function (n) { return !isNaN(n); });
+      if (!nums.length) return 0;
+      var sum = nums.reduce(function (a, b) { return a + b; }, 0);
+      if (fn === "SUM") return Math.round(sum * 100) / 100;
+      if (fn === "AVG") return Math.round((sum / nums.length) * 100) / 100;
+      if (fn === "MIN") return Math.min.apply(null, nums);
+      if (fn === "MAX") return Math.max.apply(null, nums);
+    }
+    return grpRows.length ? lireValColSql(grpRows[0], e) : null;
+  }
+
+  function evaluerWhereSql(row, condStr, db) {
+    var c = String(condStr || "").trim();
+    if (!c) return true;
+    while (c[0] === "(" && c[c.length - 1] === ")" && c.indexOf(")") === c.length - 1) {
+      c = c.substring(1, c.length - 1).trim();
+    }
+    var partsOr = c.split(/\s+OR\s+/i);
+    if (partsOr.length > 1) {
+      return partsOr.some(function (p) { return evaluerWhereSql(row, p, db); });
+    }
+    var partsAnd = c.split(/\s+AND\s+(?![^()]*\))/i);
+    if (partsAnd.length > 1) {
+      return partsAnd.every(function (p) { return evaluerWhereSql(row, p, db); });
+    }
+    /* Sous-requête [NOT] IN (SELECT ...) */
+    var mSubIn = c.match(/^([a-zA-Z0-9_.]+)\s+(NOT\s+)?IN\s*\(\s*(SELECT\s+[\s\S]+)\)$/i);
+    if (mSubIn && db) {
+      var valLeft = lireValColSql(row, mSubIn[1]);
+      var estNot = Boolean(mSubIn[2]);
+      var resSub = executerRequeteSqlLocale(db, mSubIn[3]);
+      if (resSub && resSub.lignes && resSub.colonnes && resSub.colonnes.length) {
+        var colSub = resSub.colonnes[0];
+        var trouve = resSub.lignes.some(function (rS) { return String(rS[colSub]) === String(valLeft); });
+        return estNot ? !trouve : trouve;
+      }
+    }
+    /* LIKE */
+    var mLike = c.match(/^([a-zA-Z0-9_.]+)\s+LIKE\s+'([^']*)'$/i);
+    if (mLike) {
+      var vL = String(lireValColSql(row, mLike[1]) || "");
+      var pat = "^" + mLike[2].replace(/%/g, ".*").replace(/_/g, ".") + "$";
+      return new RegExp(pat, "i").test(vL);
+    }
+    /* Comparaison =, !=, <>, <=, >=, <, > */
+    var mCmp = c.match(/^([\s\S]+?)\s*(<=|>=|<>|!=|=|<|>)\s*([\s\S]+)$/);
+    if (mCmp) {
+      var g = lireValColSql(row, mCmp[1].trim());
+      var op = mCmp[2];
+      var d = lireValColSql(row, mCmp[3].trim());
+      if (op === "=") return String(g) === String(d);
+      if (op === "!=" || op === "<>") return String(g) !== String(d);
+      var ng = Number(g), nd = Number(d);
+      var cmpNum = !isNaN(ng) && !isNaN(nd);
+      var a = cmpNum ? ng : String(g);
+      var b = cmpNum ? nd : String(d);
+      if (op === "<") return a < b;
+      if (op === ">") return a > b;
+      if (op === "<=") return a <= b;
+      if (op === ">=") return a >= b;
+    }
+    return true;
+  }
+
+  window.ouvrirSimulateurSqlSTI = function () {
+    var ex = document.getElementById("sti-modal-labo-sql");
+    if (ex) { ex.remove(); return; }
+
+    var cleBase = "location";
+    var dbCourante = clonerBaseSql(cleBase);
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-labo-sql";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(13,18,30,.84);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:12px;font:600 13px/1.45 system-ui,'Segoe UI',sans-serif;";
+
+    var boite = document.createElement("div");
+    boite.style.cssText = "background:#fffdf7;color:#23201a;border:3px solid #23201a;border-radius:20px;width:min(1120px,97vw);max-height:92dvh;display:flex;flex-direction:column;box-shadow:7px 7px 0 #0284c7;overflow:hidden;color-scheme:light;";
+
+    boite.innerHTML =
+      "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;background:linear-gradient(125deg,#0f172a,#0369a1);color:#fff;border-bottom:2.5px solid #23201a'>" +
+        "<div style='display:flex;align-items:center;gap:10px;flex-wrap:wrap'>" +
+          "<strong style='font-size:16px;font-weight:900'>🗄️ Simulateur SQL Hors-ligne — Mini-phpMyAdmin STI</strong>" +
+          "<select id='sti-sql-sel-db' style='border:2px solid #fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:900;background:#fff;color:#0f172a'>" +
+            "<option value='location'>🚗 Base 1 : Location de voitures (client, voiture, location)</option>" +
+            "<option value='biblio'>📚 Base 2 : Bibliothèque scolaire (adherent, livre, emprunt)</option>" +
+          "</select>" +
+        "</div>" +
+        "<div style='display:flex;gap:6px;flex-wrap:wrap'>" +
+          "<button type='button' id='sti-sql-reset' style='border:2px solid #fff;background:#fef3c7;color:#92400e;border-radius:999px;padding:5px 11px;font-weight:900;font-size:11.5px;cursor:pointer'>🔄 Réinitialiser la base</button>" +
+          "<button type='button' id='sti-sql-send-prof' style='border:2px solid #fff;background:#ffd54f;color:#23201a;border-radius:999px;padding:5px 12px;font-weight:900;font-size:11.5px;cursor:pointer'>📤 Envoyer ma requête au Prof</button>" +
+          "<button type='button' id='sti-sql-close' style='border:2px solid #fff;background:#ef4444;color:#fff;border-radius:999px;padding:5px 12px;font-weight:900;font-size:12px;cursor:pointer'>✕ Fermer</button>" +
+        "</div>" +
+      "</div>" +
+      "<div style='flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));min-height:0;overflow-y:auto'>" +
+        "<div id='sti-sql-schema-col' style='padding:12px 14px;background:#f8fafc;border-right:2px solid #23201a;overflow-y:auto'></div>" +
+        "<div style='padding:12px 14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto'>" +
+          "<div id='sti-sql-exemples-bar' style='display:flex;gap:5px;flex-wrap:wrap'></div>" +
+          "<textarea id='sti-sql-editor' rows='4' spellcheck='false' style='width:100%;font:700 13px/1.5 ui-monospace,Consolas,monospace;background:#0f172a;color:#38bdf8;border:2px solid #23201a;border-radius:12px;padding:10px;box-sizing:border-box'></textarea>" +
+          "<div style='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap'>" +
+            "<span style='font-size:11.5px;color:#64748b;font-weight:800'>💡 Supporte : SELECT, DISTINCT, WHERE, JOIN, GROUP BY, HAVING, ORDER BY, NOT IN, INSERT, UPDATE, DELETE</span>" +
+            "<button type='button' id='sti-sql-run' style='border:2px solid #23201a;border-radius:999px;padding:7px 18px;font-size:13px;font-weight:900;background:linear-gradient(125deg,#0284c7,#0369a1);color:#fff;cursor:pointer;box-shadow:2.5px 2.5px 0 #23201a'>▶ Exécuter la requête SQL</button>" +
+          "</div>" +
+          "<div id='sti-sql-res-zone' style='margin-top:4px'></div>" +
+        "</div>" +
+      "</div>";
+
+    fond.appendChild(boite);
+    (document.body || document.documentElement).appendChild(fond);
+
+    var divSchema = boite.querySelector("#sti-sql-schema-col");
+    var divExemples = boite.querySelector("#sti-sql-exemples-bar");
+    var txtSql = boite.querySelector("#sti-sql-editor");
+    var divRes = boite.querySelector("#sti-sql-res-zone");
+
+    function peindreSchemaEtExemples() {
+      var htmlS = "<div style='font-weight:900;font-size:13.5px;margin-bottom:8px;color:#0f172a'>📋 Schéma relationnel &amp; Tables (cliquez pour afficher) :</div>";
+      Object.keys(dbCourante.tables).forEach(function (nomT) {
+        var t = dbCourante.tables[nomT];
+        htmlS +=
+          "<div style='background:#fff;border:2px solid #23201a;border-radius:12px;padding:9px 11px;margin-bottom:8px;box-shadow:2px 2px 0 #cbd5e1'>" +
+            "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px'>" +
+              "<strong style='color:#0369a1;font-size:13px'>🗄️ " + esc(nomT) + " (" + t.lignes.length + " lignes)</strong>" +
+              "<button type='button' data-sql-tbl='" + esc(nomT) + "' style='border:1.5px solid #23201a;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:900;background:#e0f2fe;color:#0369a1;cursor:pointer'>👁️ Voir SELECT *</button>" +
+            "</div>" +
+            "<div style='font-size:11.5px;font-family:monospace;color:#334155'>(" +
+              t.colonnes.map(function (c) {
+                return c === t.pk ? "<u style='color:#dc2626;font-weight:900'>" + esc(c) + " (PK)</u>" : esc(c);
+              }).join(", ") +
+            ")</div>" +
+            (t.fk ? "<div style='font-size:11px;color:#64748b;margin-top:3px'>🔗 FK : " + esc(t.fk) + "</div>" : "") +
+          "</div>";
+      });
+      divSchema.innerHTML = htmlS;
+      divSchema.querySelectorAll("button[data-sql-tbl]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          txtSql.value = "SELECT * FROM " + b.getAttribute("data-sql-tbl") + ";";
+          lancerExecutionSql();
+        });
+      });
+
+      divExemples.innerHTML = (dbCourante.exemples || []).map(function (ex, idx) {
+        return "<button type='button' data-sql-ex='" + idx + "' style='border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#f1f5f9;color:#0f172a;cursor:pointer'>⚡ " + esc(ex.lbl) + "</button>";
+      }).join("");
+      divExemples.querySelectorAll("button[data-sql-ex]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var ex = dbCourante.exemples[Number(b.getAttribute("data-sql-ex"))];
+          if (ex) {
+            txtSql.value = ex.sql;
+            lancerExecutionSql();
+          }
+        });
+      });
+    }
+
+    function lancerExecutionSql() {
+      var res = executerRequeteSqlLocale(dbCourante, txtSql.value);
+      peindreSchemaEtExemples();
+      if (res.erreur) {
+        divRes.innerHTML = "<div style='padding:10px 12px;border-radius:12px;background:#fde2e6;color:#c0392b;border:2px solid #c0392b;font-weight:900'>❌ Erreur SQL : " + esc(res.erreur) + "</div>";
+        return;
+      }
+      var html = "";
+      if (res.message) {
+        html += "<div style='padding:8px 12px;border-radius:10px;background:#dcfce7;color:#166534;border:1.5px solid #15803d;font-weight:900;margin-bottom:8px'>" + esc(res.message) + "</div>";
+      } else {
+        html += "<div style='font-size:12px;font-weight:900;color:#15803d;margin-bottom:6px'>✅ Requête exécutée avec succès — " + res.lignes.length + " ligne(s) retournée(s) (mysqli_num_rows = " + res.lignes.length + ") :</div>";
+      }
+      if (!res.lignes.length) {
+        html += "<div style='padding:12px;background:#f8fafc;border:1.5px dashed #94a3b8;border-radius:10px;text-align:center;color:#64748b;font-weight:800'>Aucun enregistrement ne correspond à cette requête (0 ligne).</div>";
+      } else {
+        html += "<div style='overflow-x:auto;border:2px solid #23201a;border-radius:12px'><table style='width:100%;border-collapse:collapse;font-size:12px;background:#fff'><thead><tr style='background:#0f172a;color:#fff'>" +
+          res.colonnes.map(function (c) { return "<th style='padding:7px 10px;text-align:left;border-right:1px solid #334155'>" + esc(c) + "</th>"; }).join("") +
+          "</tr></thead><tbody>" +
+          res.lignes.map(function (r, idx) {
+            return "<tr style='background:" + (idx % 2 ? "#f8fafc" : "#fff") + ";border-top:1px solid #cbd5e1'>" +
+              res.colonnes.map(function (c) { return "<td style='padding:6px 10px;border-right:1px solid #e2e8f0;font-family:monospace;font-weight:700'>" + esc(String(r[c] != null ? r[c] : "NULL")) + "</td>"; }).join("") +
+            "</tr>";
+          }).join("") +
+          "</tbody></table></div>";
+      }
+      divRes.innerHTML = html;
+    }
+
+    boite.querySelector("#sti-sql-sel-db").addEventListener("change", function (e) {
+      cleBase = e.target.value;
+      dbCourante = clonerBaseSql(cleBase);
+      peindreSchemaEtExemples();
+      if (dbCourante.exemples && dbCourante.exemples[0]) txtSql.value = dbCourante.exemples[0].sql;
+      lancerExecutionSql();
+    });
+    boite.querySelector("#sti-sql-reset").addEventListener("click", function () {
+      dbCourante = clonerBaseSql(cleBase);
+      peindreSchemaEtExemples();
+      lancerExecutionSql();
+      afficherToastSynchro("🔄 Base de données réinitialisée !");
+    });
+    boite.querySelector("#sti-sql-run").addEventListener("click", lancerExecutionSql);
+    boite.querySelector("#sti-sql-send-prof").addEventListener("click", function () {
+      var reqTxt = txtSql.value.trim();
+      if (!reqTxt) return;
+      window.__stiEnvoyerCopieTpAuProf({
+        typeTp: "Requête SQL (" + cleBase + ")",
+        sql: reqTxt,
+        codeComplet: "[Requête SQL TP — Base " + cleBase + "]\n" + reqTxt
+      });
+      afficherToastSynchro("📤 Requête SQL envoyée au professeur !");
+    });
+    boite.querySelector("#sti-sql-close").addEventListener("click", function () { fond.remove(); });
+    fond.addEventListener("click", function (e) { if (e.target === fond) fond.remove(); });
+
+    peindreSchemaEtExemples();
+    txtSql.value = dbCourante.exemples[0].sql;
+    lancerExecutionSql();
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🔤 4. LABORATOIRE VISUEL DES CHAÎNES & CODES ASCII JS (100 % ANNEXE STI)
+     Strictement conforme au programme officiel STI :
+     ZÉRO .split() ni .charAt() — uniquement ch[i], ch.length, ch.substring(d, f),
+     ch.indexOf(s), ch.lastIndexOf(s), ch.charCodeAt(i), String.fromCharCode(code),
+     ch.toUpperCase(), ch.toLowerCase(), ch.trim()
+     ══════════════════════════════════════════════════════════════════════════ */
+  window.ouvrirLaboChainesAsciiSTI = function () {
+    var ex = document.getElementById("sti-modal-labo-ascii");
+    if (ex) { ex.remove(); return; }
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-labo-ascii";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(13,18,30,.84);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:12px;font:600 13px/1.45 system-ui,'Segoe UI',sans-serif;";
+
+    var boite = document.createElement("div");
+    boite.style.cssText = "background:#fffdf7;color:#23201a;border:3px solid #23201a;border-radius:20px;width:min(1060px,97vw);max-height:92dvh;display:flex;flex-direction:column;box-shadow:7px 7px 0 #d97706;overflow:hidden;color-scheme:light;";
+
+    boite.innerHTML =
+      "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;background:linear-gradient(125deg,#23201a,#b45309);color:#fff;border-bottom:2.5px solid #23201a'>" +
+        "<div>" +
+          "<strong style='font-size:16px;font-weight:900'>🔤 Laboratoire Visuel des Chaînes &amp; Codes ASCII JavaScript (100 % Annexe STI)</strong>" +
+          "<div style='font-size:11.5px;color:#fde68a;font-weight:700'>Comprendre visuellement <code>ch[i]</code>, <code>ch.length</code>, <code>ch.substring(d, f)</code>, <code>ch.indexOf()</code> et <code>ch.charCodeAt(i)</code></div>" +
+        "</div>" +
+        "<button type='button' id='sti-asc-close' style='border:2px solid #fff;background:#ef4444;color:#fff;border-radius:999px;padding:5px 13px;font-weight:900;font-size:12px;cursor:pointer'>✕ Fermer</button>" +
+      "</div>" +
+      "<div style='padding:14px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px'>" +
+        /* Saisie de la chaîne ch */
+        "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;align-items:end;background:#f9f1e3;border:2px solid #23201a;border-radius:14px;padding:11px 14px'>" +
+          "<div>" +
+            "<label style='font-size:12px;font-weight:900;display:block;margin-bottom:4px'>✏️ Saisissez votre chaîne <code>ch</code> :</label>" +
+            "<input type='text' id='sti-asc-inp' value='Bac STI 2026' maxlength='28' style='width:100%;font:900 15px monospace;padding:7px 10px;border:2px solid #23201a;border-radius:10px;background:#fff;box-sizing:border-box' />" +
+          "</div>" +
+          "<div style='display:flex;gap:8px;flex-wrap:wrap;align-items:center'>" +
+            "<span id='sti-asc-len-badge' style='background:#23201a;color:#ffd54f;padding:6px 12px;border-radius:10px;font:900 13px monospace'>ch.length = 12</span>" +
+            "<span style='font-size:11.5px;font-weight:800;color:#5a5244'>📌 Repères ASCII : <b>'0'..'9'</b> = 48..57 · <b>'A'..'Z'</b> = 65..90 · <b>'a'..'z'</b> = 97..122 · <b>Espace</b> = 32</span>" +
+          "</div>" +
+        "</div>" +
+
+        /* Ruban visuel case par case (indice i, ch[i], ch.charCodeAt(i)) */
+        "<div style='background:#fff;border:2px solid #23201a;border-radius:14px;padding:12px;box-shadow:3px 3px 0 #23201a'>" +
+          "<div style='font-size:12px;font-weight:900;margin-bottom:8px;color:#23201a'>🎞️ Ruban d'indexation <code>ch[i]</code> et codes ASCII <code>ch.charCodeAt(i)</code> (les cases jaunes représentent <code>ch.substring(d, f)</code>) :</div>" +
+          "<div id='sti-asc-ruban' style='display:flex;gap:6px;overflow-x:auto;padding-bottom:6px'></div>" +
+        "</div>" +
+
+        /* Simulateur interactif de ch.substring(d, f) et ch.indexOf(s) */
+        "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px'>" +
+          "<div style='background:#fffbeb;border:2px solid #23201a;border-radius:14px;padding:12px'>" +
+            "<strong style='font-size:13.5px;color:#92400e;display:block;margin-bottom:8px'>✂️ 1. Tester <code>ch.substring(d, f)</code> (fin <code>f</code> exclue !)</strong>" +
+            "<div style='display:flex;gap:12px;align-items:center;margin-bottom:8px;flex-wrap:wrap'>" +
+              "<label style='font-weight:900;font-size:12.5px'>Début <code>d</code> (inclus) : <input type='number' id='sti-asc-d' value='4' min='0' max='28' style='width:60px;font-weight:900;padding:4px;border:2px solid #23201a;border-radius:8px'></label>" +
+              "<label style='font-weight:900;font-size:12.5px'>Fin <code>f</code> (exclu) : <input type='number' id='sti-asc-f' value='7' min='0' max='28' style='width:60px;font-weight:900;padding:4px;border:2px solid #23201a;border-radius:8px'></label>" +
+            "</div>" +
+            "<div id='sti-asc-res-sub' style='font-family:monospace;font-size:13.5px;font-weight:900;background:#141a24;color:#fde047;padding:9px 11px;border-radius:10px'></div>" +
+          "</div>" +
+
+          "<div style='background:#f0fdf4;border:2px solid #23201a;border-radius:14px;padding:12px'>" +
+            "<strong style='font-size:13.5px;color:#166534;display:block;margin-bottom:8px'>🔍 2. Tester <code>indexOf</code>, <code>lastIndexOf</code> &amp; <code>fromCharCode</code></strong>" +
+            "<div style='display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap'>" +
+              "<label style='font-weight:900;font-size:12px'>Sous-chaîne : <input type='text' id='sti-asc-search' value='STI' style='width:80px;font-family:monospace;font-weight:900;padding:4px 7px;border:2px solid #23201a;border-radius:8px'></label>" +
+              "<label style='font-weight:900;font-size:12px'>Code ASCII : <input type='number' id='sti-asc-code' value='65' min='32' max='126' style='width:68px;font-family:monospace;font-weight:900;padding:4px 7px;border:2px solid #23201a;border-radius:8px'></label>" +
+            "</div>" +
+            "<div id='sti-asc-res-idx' style='font-family:monospace;font-size:12.5px;font-weight:900;background:#141a24;color:#4ade80;padding:9px 11px;border-radius:10px'></div>" +
+          "</div>" +
+        "</div>" +
+
+        /* Algorithmes types du Bac STI 100 % Annexe */
+        "<div style='background:#141a24;color:#f8fafc;border:2px solid #23201a;border-radius:14px;padding:12px 14px'>" +
+          "<div style='font-weight:900;color:#ffd54f;margin-bottom:6px;font-size:13px'>🏆 Rappels officiels Bac STI (sans jamais utiliser split ni charAt) :</div>" +
+          "<pre style='margin:0;font:700 12px/1.5 ui-monospace,Consolas,monospace;color:#e2e8f0;overflow-x:auto'>" +
+"function estAlphabetique(ch) {\n" +
+"  var U = ch.toUpperCase();\n" +
+"  for (var i = 0; i < U.length; i++) {\n" +
+"    var code = U.charCodeAt(i);\n" +
+"    if ((code < 65 || code > 90) && U[i] !== \" \") return false;\n" +
+"  }\n" +
+"  return ch.length > 0;\n" +
+"}\n" +
+"// Extraire le 1er mot avant l'espace avec indexOf et substring(d, f) :\n" +
+"var p = ch.indexOf(\" \");\n" +
+"var mot1 = ch.substring(0, p);   // de l'indice 0 jusqu'à p (p exclu)\n" +
+"var suite = ch.substring(p + 1, ch.length);" +
+          "</pre>" +
+        "</div>" +
+      "</div>";
+
+    fond.appendChild(boite);
+    (document.body || document.documentElement).appendChild(fond);
+
+    var inpCh = boite.querySelector("#sti-asc-inp");
+    var badgeLen = boite.querySelector("#sti-asc-len-badge");
+    var divRuban = boite.querySelector("#sti-asc-ruban");
+    var inpD = boite.querySelector("#sti-asc-d");
+    var inpF = boite.querySelector("#sti-asc-f");
+    var divResSub = boite.querySelector("#sti-asc-res-sub");
+    var inpSearch = boite.querySelector("#sti-asc-search");
+    var inpCode = boite.querySelector("#sti-asc-code");
+    var divResIdx = boite.querySelector("#sti-asc-res-idx");
+
+    function majLaboAscii() {
+      var ch = inpCh.value || "";
+      var d = Number(inpD.value || 0);
+      var f = Number(inpF.value || 0);
+      badgeLen.textContent = "ch.length = " + ch.length;
+
+      var htmlCases = "";
+      for (var i = 0; i < ch.length; i++) {
+        var car = ch[i];
+        var code = ch.charCodeAt(i);
+        var dansSub = i >= Math.min(d, f) && i < Math.max(d, f);
+        var bgCase = dansSub ? "#fde047" : "#f8fafc";
+        var colCode = (code >= 48 && code <= 57) ? "#0284c7" : ((code >= 65 && code <= 90) ? "#15803d" : ((code >= 97 && code <= 122) ? "#7c3aed" : "#b45309"));
+        htmlCases +=
+          "<div style='min-width:54px;border:2px solid #23201a;border-radius:10px;background:" + bgCase + ";text-align:center;overflow:hidden;flex-shrink:0;box-shadow:2px 2px 0 #23201a'>" +
+            "<div style='background:#23201a;color:#fff;font:900 10.5px monospace;padding:2px 4px'>i = " + i + "</div>" +
+            "<div style='font:900 18px monospace;padding:6px 4px;color:#23201a'>" + (car === " " ? "␣" : esc(car)) + "</div>" +
+            "<div style='border-top:1.5px dashed #cbd5e1;font:900 11px monospace;padding:2px 4px;color:" + colCode + "'>ASCII " + code + "</div>" +
+          "</div>";
+      }
+      if (!ch.length) {
+        htmlCases = "<div style='color:#64748b;font-weight:800;padding:8px'>Chaîne vide (ch.length === 0)</div>";
+      }
+      divRuban.innerHTML = htmlCases;
+
+      var extSub = ch.substring(d, f);
+      divResSub.innerHTML =
+        "ch.substring(" + d + ", " + f + ") ➔ <span style='color:#fff'>\"" + esc(extSub) + "\"</span><br>" +
+        "<span style='font-size:11.5px;color:#94a3b8'>Longueur extraite : " + extSub.length + " caractère(s) (indices " + d + " inclus à " + f + " exclu)</span>";
+
+      var sRech = inpSearch.value || "";
+      var codeN = Number(inpCode.value || 65);
+      divResIdx.innerHTML =
+        "ch.indexOf(\"" + esc(sRech) + "\") = <span style='color:#fff'>" + ch.indexOf(sRech) + "</span> · " +
+        "ch.lastIndexOf(\"" + esc(sRech) + "\") = <span style='color:#fff'>" + ch.lastIndexOf(sRech) + "</span><br>" +
+        "String.fromCharCode(" + codeN + ") = <span style='color:#fde047'>\"" + esc(String.fromCharCode(codeN)) + "\"</span>";
+    }
+
+    [inpCh, inpD, inpF, inpSearch, inpCode].forEach(function (el) {
+      if (el) el.addEventListener("input", majLaboAscii);
+    });
+    boite.querySelector("#sti-asc-close").addEventListener("click", function () { fond.remove(); });
+    fond.addEventListener("click", function (e) { if (e.target === fond) fond.remove(); });
+
+    majLaboAscii();
+  };
 })();
 

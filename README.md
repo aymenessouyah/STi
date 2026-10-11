@@ -1,10 +1,10 @@
-# 📚 STI By A'e — Le Web de A à Z (Version 2.0 · `v113`)
+# 📚 STI By A'e — Le Web de A à Z (Version 2.0 · `v114`)
 
 Plateforme éducative interactive dédiée aux **Sciences et Technologies de l'Informatique (STI)** :
 cours complets, leçons animées pas à pas, annexes officielles, flashcards 3D, bac à sable de code en direct, chasse aux erreurs (débogage Bac STI), simulateur visuel Form ➔ PHP ➔ SQL, constructeur visuel Tableaux/Formulaires/Flexbox, tableau blanc live, coffre de partage rapide de fichiers TP, messagerie temps réel avec pièces jointes, questions flash en direct, séries d'exercices, TP corrigés, quiz interactifs et épreuves pratiques en **HTML5, CSS3, JavaScript, SQL et PHP / MySQLi**.
 
 > **Auteur** : **Aymen Essouyah** (`By A'e`)  
-> **Version** : **V2.0 · `v113`** (PWA 100 % hors-ligne, Portail sécurisé, Mode Examen, Pack Sécurité Totale, Téléportation, Appel automatique, Tableau Blanc Live, Palmarès, Mains levées & Coffre de Partage Rapide TP)
+> **Version** : **V2.0 · `v114`** (PWA 100 % hors-ligne, Portail sécurisé, Mode Examen, Pack Sécurité Totale, Téléportation, Appel automatique, Tableau Blanc Live, Palmarès, Mains levées & Coffre de Partage Rapide TP)
 
 ---
 
