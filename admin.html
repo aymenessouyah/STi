@@ -1037,10 +1037,10 @@
           <span id="titre-tb-admin" style="color:#177245;transition:color .25s ease" title="🟢 En ligne">Tableau de bord STI V2.0</span>
           <span class="badge-temoin-examen" id="badge-temoin-examen" role="button" tabindex="0" title="🟢 Accès aux cours ouvert — Cliquer pour ouvrir le Centre de Sécurité / Mode Examen">🟢 Accès ouvert</span>
           <span class="badge-admin-gold">👑 Admin Gold</span>
-          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v108</span>
+          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v109</span>
           <span class="badge-supabase" id="badge-supabase-quota" title="Espace disponible dans la base Supabase (Quota 500 Mo) — cliquer pour voir le détail">🗄️ Supabase : <b id="sb-pct-restant">99,8 %</b> restant (<span id="sb-qte-restante">499,2 Mo / 500 Mo</span>)<span class="jauge-sb-mini" aria-hidden="true"><i id="sb-jauge-barre" style="width:99.8%"></i></span></span>
         </h1>
-        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v108)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
+        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v109)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
       </div>
     </div>
     <div class="barre-util">
@@ -1115,13 +1115,13 @@
     <span id="alerte-attente-txt">🔔 Nouvelle(s) demande(s) d'inscription en attente !</span>
   </div>
 
-  <!-- 3. COMPTEURS EN DIRECT (cliquables pour filtrer la liste) -->
+  <!-- 3. COMPTEURS EN DIRECT (cliquables pour filtrer la liste ou aller aux connexions) -->
   <div class="stats" id="stats">
     <div class="stat" data-filtre="en_ligne" title="Cliquer pour filtrer les élèves en ligne"><b id="s-enligne" style="color:#177245">0</b><small>🟢 En ligne</small></div>
     <div class="stat" data-filtre="*" title="Cliquer pour afficher tous les abonnés"><b id="s-total">0</b><small>👥 Abonnés</small></div>
     <div class="stat" data-filtre="actif" title="Cliquer pour filtrer les abonnés actifs"><b id="s-actifs" style="color:#6d28d9">0</b><small>🟣 Actifs</small></div>
     <div class="stat" data-filtre="en_attente" title="Cliquer pour filtrer les demandes en attente"><b id="s-attente" style="color:#b47d09">0</b><small>⏳ En attente</small></div>
-    <div class="stat" data-filtre="*" title="Total des connexions enregistrées"><b id="s-connex">0</b><small>🕒 Connexions</small></div>
+    <div class="stat" id="stat-connexions" data-scroll-cible="sec-dernieres-connexions" title="Cliquer pour aller directement à Dernières connexions"><b id="s-connex">0</b><small>🕒 Connexions</small></div>
   </div>
 
   <div class="msg" id="msg"></div>
@@ -1229,7 +1229,7 @@
     <button type="button" class="btn-outil" id="btn-voir-plus-suivi">➕ Voir plus</button>
   </div>
 
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:22px 0 10px">
+  <div id="sec-dernieres-connexions" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:22px 0 10px;scroll-margin-top:16px">
     <h2 style="margin:0">🕒 Dernières connexions (tous abonnés)</h2>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <select id="filtre-acces-classe" style="border:2px solid #23201a;border-radius:999px;padding:6px 12px;background:#fffdf7;color:#23201a;font-weight:800;font-size:12px" title="Filtrer les dernières connexions par classe">
@@ -1238,7 +1238,7 @@
       <button type="button" class="btn-outil" id="btn-ouvrir-purge-acces" style="background:#fde2e6;color:#c0392b;border-color:#c0392b;box-shadow:2px 2px 0 #c0392b" title="Effacer les connexions en choisissant le mois cible">🗑️ Effacer par mois…</button>
     </div>
   </div>
-  <div class="table-wrap">
+  <div class="table-wrap" id="wrap-table-acces">
     <table>
       <thead><tr><th>Candidat (Nom, Prénom &amp; Contact — Lycée &amp; Classe)</th><th>Lycée &amp; Classe</th><th>Début</th><th>Durée</th><th>Appareil &amp; Lieu</th><th>Page</th></tr></thead>
       <tbody id="tb-acces"></tbody>
@@ -2368,7 +2368,7 @@
 </script>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=108"></script>
-<script src="assets/js/admin.js?v=108"></script>
+<script src="assets/js/config.js?v=109"></script>
+<script src="assets/js/admin.js?v=109"></script>
 </body>
 </html>

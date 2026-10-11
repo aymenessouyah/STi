@@ -1367,13 +1367,32 @@
   if (selFiltreClasse) selFiltreClasse.addEventListener("change", rendAbonnes);
   if (selFiltreStatut) selFiltreStatut.addEventListener("change", rendAbonnes);
 
-  /* Clic rapide sur les compteurs du haut pour filtrer directement la liste */
+  /* Clic rapide sur les compteurs du haut pour filtrer directement la liste ou descendre vers Dernières connexions */
   document.querySelectorAll(".stat[data-filtre]").forEach(function (carte) {
     carte.addEventListener("click", function () {
       var f = carte.getAttribute("data-filtre");
       if (selFiltreStatut && f) {
         selFiltreStatut.value = f;
         rendAbonnes();
+      }
+    });
+  });
+  document.querySelectorAll(".stat[data-scroll-cible]").forEach(function (carte) {
+    carte.addEventListener("click", function () {
+      var idCible = carte.getAttribute("data-scroll-cible");
+      var elCible = idCible ? document.getElementById(idCible) : null;
+      if (elCible) {
+        elCible.scrollIntoView({ behavior: "smooth", block: "start" });
+        var wrapAcc = document.getElementById("wrap-table-acces");
+        if (wrapAcc) {
+          wrapAcc.style.transition = "box-shadow .25s ease, border-color .25s ease";
+          wrapAcc.style.borderColor = "#f4511e";
+          wrapAcc.style.boxShadow = "0 0 0 4px rgba(244,81,30,.28), 5px 5px 0 #f4511e";
+          setTimeout(function () {
+            wrapAcc.style.borderColor = "";
+            wrapAcc.style.boxShadow = "";
+          }, 1600);
+        }
       }
     });
   });
