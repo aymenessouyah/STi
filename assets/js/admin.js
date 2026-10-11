@@ -964,10 +964,37 @@
     idsAccesParMsg = {};
     var mapSecAlertes = {};
     var mapMainsTmp = {};
+    var mapCoffreAdd = {};
+    var mapCoffreDel = {};
+    var tsClearCoffre = 0;
 
     tousAcces.forEach(function (a) {
         var pg = a.page || "";
         if (pg === "SUPPR_ACCES") return;
+        if (pg === "COFFRE_TP_CLEAR") {
+          var tc = new Date(a.debut).getTime() || 0;
+          if (tc > tsClearCoffre) tsClearCoffre = tc;
+          return;
+        }
+        if (pg.indexOf("COFFRE_TP_DEL:") === 0) {
+          var idDel = pg.slice(14);
+          var td = new Date(a.debut).getTime() || 0;
+          if (idDel) mapCoffreDel[idDel] = Math.max(mapCoffreDel[idDel] || 0, td);
+          return;
+        }
+        if (pg.indexOf("COFFRE_TP:") === 0) {
+          try {
+            var cf = JSON.parse(a.lieu || "{}");
+            var idCf = cf.id || pg.slice(10);
+            var tsCf = Number(cf.ts || new Date(a.debut).getTime() || 0);
+            if (idCf && cf.nomFichier && (!mapCoffreAdd[idCf] || tsCf >= mapCoffreAdd[idCf].ts)) {
+              cf.id = idCf;
+              cf.ts = tsCf;
+              mapCoffreAdd[idCf] = cf;
+            }
+          } catch (e) {}
+          return;
+        }
         if (pg.indexOf("MAIN_LEVEE:") === 0) {
           try {
             var ml = JSON.parse(a.lieu || "{}");
@@ -1188,6 +1215,20 @@
         }
       });
 
+      var coffreActifs = [];
+      Object.keys(mapCoffreAdd).forEach(function (idC) {
+        var cItem = mapCoffreAdd[idC];
+        if (!cItem) return;
+        if (tsClearCoffre && cItem.ts <= tsClearCoffre) return;
+        if (mapCoffreDel[idC] && cItem.ts <= mapCoffreDel[idC]) return;
+        coffreActifs.push(cItem);
+      });
+      coffreActifs.sort(function (a, b) { return Number(b.ts || 0) - Number(a.ts || 0); });
+      window.__stiListeCoffreAdmin = coffreActifs;
+      if (typeof window.__stiMajUiCoffreAdmin === "function") {
+        window.__stiMajUiCoffreAdmin();
+      }
+
       listeAlertesSecurite = Object.keys(mapSecAlertes).map(function (k) { return mapSecAlertes[k]; }).filter(function (al) {
         var tAl = new Date(al.ts).getTime() || 0;
         return !cfgSecuriteAdmin.purgeAlertesTs || tAl > Number(cfgSecuriteAdmin.purgeAlertesTs);
@@ -1210,6 +1251,8 @@
           pg === "CFG_ECOLES" ||
           pg === "SEC_CONFIG" ||
           pg === "SUPPR_ACCES" ||
+          pg === "TABLEAU_BLANC" ||
+          pg.indexOf("COFFRE_TP") === 0 ||
           pg.indexOf("SEC_ALERTE:") === 0 ||
           pg.indexOf("SEC_SESS:") === 0 ||
           pg.indexOf("MAIN_LEVEE:") === 0 ||
@@ -7002,5 +7045,442 @@
       URL.revokeObjectURL(url);
       msg("📥 Palmarès STI exporté en Excel (CSV).", "ok");
     });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🗂️ COFFRE DE PARTAGE RAPIDE DU PROF (Distribuer .zip, .sql, .html, .php, .pdf)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var modalCoffre = document.getElementById("modal-coffre-partage");
+  var btnCoffreTop = document.getElementById("btn-coffre-top");
+  var btnCoffreCard = document.getElementById("btn-coffre-card");
+  var badgeCoffreTop = document.getElementById("badge-coffre-top");
+  var btnFermerCoffre = document.getElementById("btn-fermer-coffre");
+  var btnFermerCoffreX = document.getElementById("btn-fermer-coffre-x");
+  var selCoffreCible = document.getElementById("coffre-cible");
+  var inpCoffreTitre = document.getElementById("coffre-titre");
+  var tabCoffreUpload = document.getElementById("tab-coffre-upload");
+  var tabCoffreCode = document.getElementById("tab-coffre-code");
+  var zoneCoffreUpload = document.getElementById("zone-coffre-upload");
+  var zoneCoffreCode = document.getElementById("zone-coffre-code");
+  var inpCoffreFile = document.getElementById("coffre-file-inp");
+  var divCoffreFileInfo = document.getElementById("coffre-file-info");
+  var inpCoffreCodeNom = document.getElementById("coffre-code-nom");
+  var txtCoffreCode = document.getElementById("coffre-code-txt");
+  var btnCoffreDistribuer = document.getElementById("btn-coffre-distribuer");
+  var btnCoffreVider = document.getElementById("btn-coffre-vider");
+  var divListeCoffre = document.getElementById("liste-coffre-admin");
+  var spanNbFichiersCoffre = document.getElementById("nb-fichiers-coffre");
+
+  var modeCoffreActif = "upload"; // "upload" | "code"
+  var fichierPretCoffre = null;   // { nomFichier, taille, mime, dataUrl }
+
+  var MODELES_COFFRE_TP = {
+    sql: {
+      nom: "bd_location.sql",
+      titre: "Base de données SQL de départ (Location de voitures)",
+      code:
+        "-- Base de données STI : Location de voitures\n" +
+        "CREATE DATABASE IF NOT EXISTS bd_location DEFAULT CHARACTER SET utf8mb4;\n" +
+        "USE bd_location;\n\n" +
+        "CREATE TABLE client (\n" +
+        "  cin VARCHAR(8) PRIMARY KEY,\n" +
+        "  nom VARCHAR(40) NOT NULL,\n" +
+        "  prenom VARCHAR(40) NOT NULL,\n" +
+        "  tel VARCHAR(8) NOT NULL\n" +
+        ");\n\n" +
+        "CREATE TABLE voiture (\n" +
+        "  immat VARCHAR(15) PRIMARY KEY,\n" +
+        "  marque VARCHAR(30) NOT NULL,\n" +
+        "  prix_jour DECIMAL(8,2) NOT NULL,\n" +
+        "  disponible CHAR(1) DEFAULT 'O'\n" +
+        ");\n\n" +
+        "CREATE TABLE location (\n" +
+        "  id_loc INT AUTO_INCREMENT PRIMARY KEY,\n" +
+        "  cin VARCHAR(8) NOT NULL,\n" +
+        "  immat VARCHAR(15) NOT NULL,\n" +
+        "  date_loc DATE NOT NULL,\n" +
+        "  nb_jours INT NOT NULL,\n" +
+        "  FOREIGN KEY (cin) REFERENCES client(cin) ON DELETE CASCADE ON UPDATE CASCADE,\n" +
+        "  FOREIGN KEY (immat) REFERENCES voiture(immat) ON DELETE CASCADE ON UPDATE CASCADE\n" +
+        ");\n\n" +
+        "INSERT INTO client VALUES ('12345678', 'Ben Ali', 'Mohamed', '98111222'), ('87654321', 'Trabelsi', 'Sami', '55333444');\n" +
+        "INSERT INTO voiture VALUES ('210 TU 4589', 'Clio 5', 95.00, 'O'), ('225 TU 1024', 'Golf 8', 140.00, 'O');\n"
+    },
+    html: {
+      nom: "index_depart.html",
+      titre: "Squelette HTML5 / CSS3 / JS de départ du TP",
+      code:
+        "<!DOCTYPE html>\n" +
+        "<html lang=\"fr\">\n" +
+        "<head>\n" +
+        "  <meta charset=\"UTF-8\">\n" +
+        "  <title>TP STI — Formulaire</title>\n" +
+        "  <link rel=\"stylesheet\" href=\"style.css\">\n" +
+        "  <script src=\"controle.js\" defer><\/script>\n" +
+        "</head>\n" +
+        "<body>\n" +
+        "  <form method=\"post\" action=\"enregistrement.php\" onsubmit=\"return verif()\">\n" +
+        "    <h2>Formulaire d'inscription STI</h2>\n" +
+        "    <label>CIN (8 chiffres) :</label>\n" +
+        "    <input type=\"text\" id=\"cin\" name=\"cin\" maxlength=\"8\"><br><br>\n" +
+        "    <label>Nom & Prénom :</label>\n" +
+        "    <input type=\"text\" id=\"nom\" name=\"nom\"><br><br>\n" +
+        "    <input type=\"submit\" value=\"Valider\">\n" +
+        "    <input type=\"reset\" value=\"Annuler\">\n" +
+        "  </form>\n" +
+        "</body>\n" +
+        "</html>\n"
+    },
+    php: {
+      nom: "connexion.php",
+      titre: "Script PHP / MySQLi de départ (connexion + requête)",
+      code:
+        "<?php\n" +
+        "$con = mysqli_connect('localhost', 'root', '', 'bd_location') or die('Erreur de connexion à la base');\n" +
+        "mysqli_set_charset($con, 'utf8mb4');\n\n" +
+        "// Récupération des champs envoyés en POST\n" +
+        "$cin = $_POST['cin'];\n" +
+        "$nom = $_POST['nom'];\n\n" +
+        "// Exemple de requête SQL\n" +
+        "$req = \"SELECT * FROM client WHERE cin = '$cin'\";\n" +
+        "$res = mysqli_query($con, $req);\n" +
+        "if (mysqli_num_rows($res) > 0) {\n" +
+        "    echo 'Client déjà inscrit !';\n" +
+        "} else {\n" +
+        "    echo 'Prêt pour insertion.';\n" +
+        "}\n" +
+        "mysqli_close($con);\n" +
+        "?>\n"
+    }
+  };
+
+  function fmtTailleOctets(n) {
+    var b = Number(n || 0);
+    if (b < 1024) return b + " o";
+    if (b < 1024 * 1024) return (Math.round((b / 1024) * 10) / 10) + " Ko";
+    return (Math.round((b / (1024 * 1024)) * 100) / 100) + " Mo";
+  }
+
+  function iconeFichierCoffre(nom) {
+    var ext = String(nom || "").split(".").pop().toLowerCase();
+    if (ext === "sql") return "🗄️";
+    if (ext === "zip" || ext === "rar") return "📦";
+    if (ext === "html" || ext === "htm") return "🌐";
+    if (ext === "php") return "🐘";
+    if (ext === "js") return "⚡";
+    if (ext === "css") return "🎨";
+    if (ext === "pdf") return "📄";
+    return "📎";
+  }
+
+  function telechargerDataUrlAdmin(dataUrl, nomFichier) {
+    try {
+      var parts = String(dataUrl || "").split(",");
+      if (parts.length < 2) return;
+      var meta = parts[0];
+      var b64 = parts.slice(1).join(",");
+      var mimeMatch = meta.match(/data:([^;]+)/);
+      var mime = (mimeMatch && mimeMatch[1]) || "application/octet-stream";
+      var bin = atob(b64);
+      var u8 = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      var blob = new Blob([u8], { type: mime });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = nomFichier || "fichier_tp";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    } catch (e) {
+      msg("⚠️ Impossible de télécharger ce fichier.", "err");
+    }
+  }
+
+  function basculerOngletCoffre(mode) {
+    modeCoffreActif = mode === "code" ? "code" : "upload";
+    if (zoneCoffreUpload) zoneCoffreUpload.hidden = modeCoffreActif !== "upload";
+    if (zoneCoffreCode) zoneCoffreCode.hidden = modeCoffreActif !== "code";
+    if (tabCoffreUpload) {
+      tabCoffreUpload.style.background = modeCoffreActif === "upload" ? "#ffd54f" : "#fff";
+      tabCoffreUpload.style.fontWeight = modeCoffreActif === "upload" ? "900" : "800";
+    }
+    if (tabCoffreCode) {
+      tabCoffreCode.style.background = modeCoffreActif === "code" ? "#ffd54f" : "#fff";
+      tabCoffreCode.style.fontWeight = modeCoffreActif === "code" ? "900" : "800";
+    }
+  }
+
+  if (tabCoffreUpload) tabCoffreUpload.addEventListener("click", function () { basculerOngletCoffre("upload"); });
+  if (tabCoffreCode) tabCoffreCode.addEventListener("click", function () { basculerOngletCoffre("code"); });
+
+  document.querySelectorAll(".btn-tpl-coffre").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var k = btn.getAttribute("data-tpl");
+      var m = MODELES_COFFRE_TP[k];
+      if (!m) return;
+      if (inpCoffreCodeNom) inpCoffreCodeNom.value = m.nom;
+      if (txtCoffreCode) txtCoffreCode.value = m.code;
+      if (inpCoffreTitre && !inpCoffreTitre.value.trim()) inpCoffreTitre.value = m.titre;
+    });
+  });
+
+  if (inpCoffreFile) {
+    inpCoffreFile.addEventListener("change", function () {
+      var f = inpCoffreFile.files && inpCoffreFile.files[0];
+      if (!f) {
+        fichierPretCoffre = null;
+        if (divCoffreFileInfo) divCoffreFileInfo.textContent = "Aucun fichier sélectionné.";
+        return;
+      }
+      if (f.size > 4.5 * 1024 * 1024) {
+        msg("⚠️ Fichier trop volumineux (> 4,5 Mo). Compressez-le en .zip avant l'envoi.", "err");
+        inpCoffreFile.value = "";
+        fichierPretCoffre = null;
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        fichierPretCoffre = {
+          nomFichier: f.name,
+          taille: f.size,
+          mime: f.type || "application/octet-stream",
+          dataUrl: String(ev.target.result || "")
+        };
+        if (divCoffreFileInfo) {
+          divCoffreFileInfo.innerHTML = "✅ Prêt à distribuer : <b>" + echHtml(f.name) + "</b> (" + fmtTailleOctets(f.size) + ")";
+        }
+        if (inpCoffreTitre && !inpCoffreTitre.value.trim()) {
+          inpCoffreTitre.value = "Fichier de TP : " + f.name;
+        }
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  function rendListeCoffreAdmin() {
+    var liste = window.__stiListeCoffreAdmin || [];
+    if (badgeCoffreTop) {
+      badgeCoffreTop.style.display = liste.length ? "inline-block" : "none";
+      badgeCoffreTop.textContent = String(liste.length);
+    }
+    if (spanNbFichiersCoffre) spanNbFichiersCoffre.textContent = String(liste.length);
+    if (!divListeCoffre) return;
+
+    if (!liste.length) {
+      divListeCoffre.innerHTML =
+        "<div style='text-align:center;padding:16px;background:#fff;border:1.5px dashed #c7baa5;border-radius:12px;color:#7a6f5d;font-weight:800;font-size:12.5px'>" +
+        "📭 Aucun fichier dans le coffre pour le moment. Choisissez un fichier ou un modèle ci-dessus puis cliquez sur « 📤 Distribuer »." +
+        "</div>";
+      return;
+    }
+
+    divListeCoffre.innerHTML = "";
+    liste.forEach(function (it) {
+      var row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff;border:2px solid #23201a;border-radius:12px;padding:9px 12px;box-shadow:2px 2px 0 #23201a;";
+      var cibleTxt = it.cible === "*" ? "Toutes les classes" : ("Classe " + it.cible);
+      var dtStr = it.ts ? fmtDate(new Date(it.ts).toISOString()) : "—";
+
+      var left = document.createElement("div");
+      left.style.cssText = "display:flex;align-items:center;gap:10px;min-width:0;flex:1;";
+      left.innerHTML =
+        "<span style='font-size:22px;flex-shrink:0'>" + iconeFichierCoffre(it.nomFichier) + "</span>" +
+        "<div style='min-width:0'>" +
+          "<div style='font-weight:900;font-size:13px;color:#23201a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>" + echHtml(it.titre || it.nomFichier) + "</div>" +
+          "<div style='font-size:11.5px;font-weight:800;color:#6b6152'>" +
+            "<code>" + echHtml(it.nomFichier) + "</code> · " + fmtTailleOctets(it.taille) + " · <span style='color:#b45309'>🏫 " + echHtml(cibleTxt) + "</span> · " + echHtml(dtStr) +
+          "</div>" +
+        "</div>";
+
+      var right = document.createElement("div");
+      right.style.cssText = "display:flex;align-items:center;gap:6px;flex-shrink:0;";
+
+      var btnTest = document.createElement("button");
+      btnTest.type = "button";
+      btnTest.style.cssText = "border:1.5px solid #23201a;border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:900;background:#e3f6e8;color:#177245;cursor:pointer;";
+      btnTest.textContent = "📥 Tester";
+      btnTest.addEventListener("click", function () {
+        telechargerDataUrlAdmin(it.dataUrl, it.nomFichier);
+      });
+
+      var btnDel = document.createElement("button");
+      btnDel.type = "button";
+      btnDel.style.cssText = "border:1.5px solid #23201a;border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:900;background:#fde2e6;color:#c0392b;cursor:pointer;";
+      btnDel.textContent = "🗑️ Retirer";
+      btnDel.addEventListener("click", function () {
+        retirerFichierCoffre(it.id);
+      });
+
+      right.append(btnTest, btnDel);
+      row.append(left, right);
+      divListeCoffre.appendChild(row);
+    });
+  }
+
+  window.__stiMajUiCoffreAdmin = rendListeCoffreAdmin;
+
+  function peuplerCiblesCoffre() {
+    if (!selCoffreCible) return;
+    var valAct = selCoffreCible.value || (filtreClasse && filtreClasse !== "*" ? filtreClasse : "*");
+    var classes = obtenirClassesActives();
+    selCoffreCible.innerHTML =
+      '<option value="*">🌐 Toutes les classes</option>' +
+      '<option value="3SI">🏫 Toutes les 3e SI</option>' +
+      '<option value="4SI">🏫 Toutes les 4e SI</option>';
+    classes.forEach(function (c) {
+      var o = document.createElement("option");
+      o.value = c;
+      o.textContent = "🏫 Classe " + c;
+      selCoffreCible.appendChild(o);
+    });
+    var existe = Array.prototype.some.call(selCoffreCible.options, function (opt) { return opt.value === valAct; });
+    selCoffreCible.value = existe ? valAct : "*";
+  }
+
+  function ouvrirModalCoffre() {
+    peuplerCiblesCoffre();
+    if (txtCoffreCode && !txtCoffreCode.value.trim()) {
+      txtCoffreCode.value = MODELES_COFFRE_TP.sql.code;
+    }
+    rendListeCoffreAdmin();
+    if (modalCoffre) modalCoffre.classList.add("visible");
+  }
+
+  function distribuerFichierCoffre() {
+    var objF = null;
+    if (modeCoffreActif === "upload") {
+      if (!fichierPretCoffre || !fichierPretCoffre.dataUrl) {
+        msg("⚠️ Veuillez d'abord sélectionner un fichier sur votre appareil (ou passer à l'onglet 2).", "err");
+        return;
+      }
+      objF = fichierPretCoffre;
+    } else {
+      var nomC = (inpCoffreCodeNom && inpCoffreCodeNom.value.trim()) || "fichier_tp.sql";
+      var contenuC = txtCoffreCode ? txtCoffreCode.value : "";
+      if (!contenuC.trim()) {
+        msg("⚠️ Le contenu du fichier à créer est vide.", "err");
+        if (txtCoffreCode) txtCoffreCode.focus();
+        return;
+      }
+      var b64Txt = btoa(unescape(encodeURIComponent(contenuC)));
+      objF = {
+        nomFichier: nomC,
+        taille: contenuC.length,
+        mime: "text/plain;charset=utf-8",
+        dataUrl: "data:text/plain;charset=utf-8;base64," + b64Txt
+      };
+    }
+
+    var idNew = "cf_" + Date.now();
+    var cibleVal = selCoffreCible ? selCoffreCible.value : "*";
+    var titreVal = (inpCoffreTitre && inpCoffreTitre.value.trim()) || ("Fichier TP : " + objF.nomFichier);
+
+    var payload = {
+      type: "coffre_tp",
+      action: "add",
+      id: idNew,
+      cible: cibleVal,
+      titre: titreVal,
+      nomFichier: objF.nomFichier,
+      taille: objF.taille,
+      mime: objF.mime,
+      dataUrl: objF.dataUrl,
+      ts: Date.now()
+    };
+
+    if (!window.__stiListeCoffreAdmin) window.__stiListeCoffreAdmin = [];
+    window.__stiListeCoffreAdmin.unshift(payload);
+    rendListeCoffreAdmin();
+
+    if (adminUid) {
+      sb.from("acces").insert({
+        user_id: adminUid,
+        page: "COFFRE_TP:" + idNew,
+        lieu: JSON.stringify(payload),
+        duree_sec: 0
+      }).then(function () {});
+    }
+    try {
+      sb.channel("sti-diffusion").send({ type: "broadcast", event: "coffre_tp", payload: payload });
+    } catch (e) {}
+    fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).catch(function () {});
+
+    if (inpCoffreFile) inpCoffreFile.value = "";
+    fichierPretCoffre = null;
+    if (divCoffreFileInfo) divCoffreFileInfo.textContent = "✅ Fichier distribué ! Vous pouvez en ajouter un autre.";
+    msg("📤 Fichier « " + objF.nomFichier + " » distribué aux élèves (" + (cibleVal === "*" ? "Toutes les classes" : cibleVal) + ") !", "ok");
+  }
+
+  function retirerFichierCoffre(idCoffre) {
+    if (!idCoffre) return;
+    window.__stiListeCoffreAdmin = (window.__stiListeCoffreAdmin || []).filter(function (x) { return x.id !== idCoffre; });
+    rendListeCoffreAdmin();
+
+    var payloadDel = {
+      type: "coffre_tp",
+      action: "del",
+      id: idCoffre,
+      ts: Date.now()
+    };
+    if (adminUid) {
+      sb.from("acces").delete().eq("page", "COFFRE_TP:" + idCoffre).then(function () {});
+      sb.from("acces").insert({
+        user_id: adminUid,
+        page: "COFFRE_TP_DEL:" + idCoffre,
+        lieu: JSON.stringify(payloadDel),
+        duree_sec: 0
+      }).then(function () {});
+    }
+    try {
+      sb.channel("sti-diffusion").send({ type: "broadcast", event: "coffre_tp", payload: payloadDel });
+    } catch (e) {}
+    fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+      method: "POST",
+      body: JSON.stringify(payloadDel)
+    }).catch(function () {});
+    msg("🗑️ Fichier retiré du coffre des élèves.", "ok");
+  }
+
+  function viderCoffreAdmin() {
+    window.__stiListeCoffreAdmin = [];
+    rendListeCoffreAdmin();
+    var payloadClear = {
+      type: "coffre_tp",
+      action: "clear",
+      ts: Date.now()
+    };
+    if (adminUid) {
+      sb.from("acces").delete().like("page", "COFFRE_TP:%").then(function () {});
+      sb.from("acces").insert({
+        user_id: adminUid,
+        page: "COFFRE_TP_CLEAR",
+        lieu: JSON.stringify(payloadClear),
+        duree_sec: 0
+      }).then(function () {});
+    }
+    try {
+      sb.channel("sti-diffusion").send({ type: "broadcast", event: "coffre_tp", payload: payloadClear });
+    } catch (e) {}
+    fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+      method: "POST",
+      body: JSON.stringify(payloadClear)
+    }).catch(function () {});
+    msg("🧹 Coffre de partage vidé pour toutes les classes.", "ok");
+  }
+
+  if (btnCoffreTop) btnCoffreTop.addEventListener("click", ouvrirModalCoffre);
+  if (btnCoffreCard) btnCoffreCard.addEventListener("click", ouvrirModalCoffre);
+  if (btnCoffreDistribuer) btnCoffreDistribuer.addEventListener("click", distribuerFichierCoffre);
+  if (btnCoffreVider) btnCoffreVider.addEventListener("click", viderCoffreAdmin);
+  [btnFermerCoffre, btnFermerCoffreX].forEach(function (b) {
+    if (b) b.addEventListener("click", function () { if (modalCoffre) modalCoffre.classList.remove("visible"); });
+  });
+  if (modalCoffre) {
+    modalCoffre.addEventListener("click", function (e) { if (e.target === modalCoffre) modalCoffre.classList.remove("visible"); });
   }
 })();

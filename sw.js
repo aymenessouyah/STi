@@ -3,7 +3,7 @@
    - Pré-chargement automatique en arrière-plan des 426 fichiers du site
    - Réponse 0 ms hors-ligne et secours rapide (2,2 s) sur PC Windows même si une carte réseau virtuelle garde navigator.onLine = true */
 
-var CACHE = "sti-atelier-v112";
+var CACHE = "sti-atelier-v113";
 var SHELL = [
   "./",
   "./index.html",
@@ -69,12 +69,6 @@ var OFFLINE_LIST = [
   "./Positionnement-animee/uploads/Annexe CSS3 By A.E.pdf",
   "./Positionnement-animee/uploads/Annexe HTML5 By A.E.pdf",
   "./admin.html",
-  "./assets/assets/css/tailwind.css",
-  "./assets/assets/fontawesome/LICENSE.txt",
-  "./assets/assets/fontawesome/css/all.min.css",
-  "./assets/assets/fontawesome/webfonts/fa-brands-400.woff2",
-  "./assets/assets/fontawesome/webfonts/fa-regular-400.woff2",
-  "./assets/assets/fontawesome/webfonts/fa-solid-900.woff2",
   "./assets/audio/foret.mp3",
   "./assets/css/atelier-pages.css",
   "./assets/css/atelier-php.css",
@@ -124,9 +118,12 @@ var OFFLINE_LIST = [
   "./cours/fiche-revision-html5.html",
   "./cours/html5.html",
   "./cours/javascript.html",
+  "./cours/PHP-recap.html",
+  "./cours/php-recap.html",
   "./cours/php-mysqli.html",
   "./cours/php.html",
   "./cours/sql-bases-ldd-lmd-lcd.html",
+  "./cours/sql-contraintes.html",
   "./cours/sql.html",
   "./cssanimee/cours.js",
   "./cssanimee/index.html",

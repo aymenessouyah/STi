@@ -1239,6 +1239,19 @@
     btnBac.style.cssText = "display:" + (ok4SI ? "block" : "none") + ";margin:6px 0 0 auto;border:1.5px solid #23201a;background:#f3ead9;color:#23201a;text-decoration:none;text-align:center;border-radius:9px;padding:6px 10px;font-weight:800;font-size:11.5px;";
     pan.appendChild(btnBac);
 
+    var btnCoffrePan = document.createElement("button");
+    btnCoffrePan.id = "sti-btn-coffre-pan";
+    btnCoffrePan.type = "button";
+    btnCoffrePan.textContent = "🗂️ Fichiers TP du Prof (0)";
+    btnCoffrePan.style.cssText = "display:block;width:100%;margin:6px 0 0 auto;border:1.5px solid #b45309;background:#fef3c7;color:#92400e;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11.5px;cursor:pointer;";
+    btnCoffrePan.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fermer();
+      if (window.ouvrirCoffreTpEleveSTI) window.ouvrirCoffreTpEleveSTI();
+    });
+    pan.appendChild(btnCoffrePan);
+
     var btnMainPan = document.createElement("button");
     btnMainPan.id = "sti-btn-main-levee";
     btnMainPan.type = "button";
@@ -2824,6 +2837,8 @@
                   dernierFlash = a;
                 } else if (a && a.type === "tableau_blanc") {
                   if (!dernierTbLive || Number(a.ts || 0) >= Number(dernierTbLive.ts || 0)) dernierTbLive = a;
+                } else if (a && a.type === "coffre_tp") {
+                  if (typeof window.__stiTraiterSignalCoffreTp === "function") window.__stiTraiterSignalCoffreTp(a, true);
                 } else if (a && a.type === "sec_config") {
                   if (!dernierSecCfg || Number(a.ts || 0) >= Number(dernierSecCfg.ts || 0)) dernierSecCfg = a;
                 } else if (a && a.type === "session_unique" && a.uid === uid) {
@@ -2865,6 +2880,11 @@
         })
         .on("broadcast", { event: "tableau_blanc" }, function (p) {
           if (p && p.payload) afficherTableauBlancLiveEleve(p.payload);
+        })
+        .on("broadcast", { event: "coffre_tp" }, function (p) {
+          if (p && p.payload && typeof window.__stiTraiterSignalCoffreTp === "function") {
+            window.__stiTraiterSignalCoffreTp(p.payload, false);
+          }
         })
         .on("broadcast", { event: "sec_config" }, function (p) {
           if (p && p.payload) appliquerConfigSecurite(p.payload);
@@ -4987,10 +5007,22 @@
       ouvrirTableauBlancAdminSurSite();
     });
 
+    var btnCoffreAdm = document.createElement("button");
+    btnCoffreAdm.type = "button";
+    btnCoffreAdm.textContent = "🗂️";
+    btnCoffreAdm.title = "🗂️ Coffre de Partage Rapide : distribuer un fichier (.zip, .sql, .html, .php, .pdf) aux élèves d'une classe";
+    btnCoffreAdm.style.cssText = "background:linear-gradient(120deg,#fef3c7,#d97706);color:#fff;border:2px solid #23201a;border-radius:999px;padding:8px 11px;font:900 15px/1 system-ui,'Segoe UI',sans-serif;cursor:pointer;box-shadow:3px 3px 0 #23201a;";
+    btnCoffreAdm.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (window.ouvrirCoffreAdminSurSiteSTI) window.ouvrirCoffreAdminSurSiteSTI();
+    });
+
     cont.appendChild(b);
     cont.appendChild(btnMsnAdm);
     cont.appendChild(btnFlashAdm);
     cont.appendChild(btnTbAdm);
+    cont.appendChild(btnCoffreAdm);
     (document.body || document.documentElement).appendChild(cont);
 
     installerBoutonMessengerGlobal(true, currentUid || "admin", "Admin");
@@ -7920,5 +7952,370 @@
       setTimeout(initBtnHaut, 120);
     }
   })();
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🗂️ 5. COFFRE DE PARTAGE RAPIDE DU PROF (Fichiers .zip, .sql, .html, .php, .pdf)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var CLE_CACHE_COFFRE = "sti-coffre-tp-cache-v1";
+  var CLE_COFFRE_VUS = "sti-coffre-tp-vus-v1";
+  var mapCoffreEleve = {}; // id -> item
+  var mapCoffreDelEleve = {};
+  var tsClearCoffreEleve = 0;
+
+  function lireCacheCoffreLocal() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(CLE_CACHE_COFFRE) || "[]");
+      if (Array.isArray(arr)) {
+        arr.forEach(function (it) {
+          if (it && it.id && it.nomFichier) mapCoffreEleve[it.id] = it;
+        });
+      }
+    } catch (e) {}
+  }
+
+  function sauverCacheCoffreLocal() {
+    try {
+      var list = Object.keys(mapCoffreEleve).map(function (k) { return mapCoffreEleve[k]; });
+      localStorage.setItem(CLE_CACHE_COFFRE, JSON.stringify(list.slice(0, 25)));
+    } catch (e) {}
+  }
+
+  function estCoffrePourMaClasse(item) {
+    if (!item || !item.id || !item.nomFichier) return false;
+    if (estSessionAdminVerifiee()) return true;
+    var cLoc = lireCacheSessionLocal() || {};
+    var maCl = String(currentClasse || cLoc.classe || "").trim().toUpperCase();
+    var cible = String(item.cible || "*").trim().toUpperCase();
+    if (!cible || cible === "*") return true;
+    if (maCl === "ELEVELABO3") return true;
+    if (cible === "3SI") return maCl.indexOf("3") === 0;
+    if (cible === "4SI") return maCl.indexOf("4") === 0;
+    return maCl === cible;
+  }
+
+  function obtenirFichiersCoffrePourMoi() {
+    return Object.keys(mapCoffreEleve)
+      .map(function (k) { return mapCoffreEleve[k]; })
+      .filter(function (it) {
+        if (!it) return false;
+        var t = Number(it.ts || 0);
+        if (tsClearCoffreEleve && t <= tsClearCoffreEleve) return false;
+        if (mapCoffreDelEleve[it.id] && t <= mapCoffreDelEleve[it.id]) return false;
+        return estCoffrePourMaClasse(it);
+      })
+      .sort(function (a, b) { return Number(b.ts || 0) - Number(a.ts || 0); });
+  }
+
+  function iconeExtCoffre(nom) {
+    var ext = String(nom || "").split(".").pop().toLowerCase();
+    if (ext === "sql") return "🗄️";
+    if (ext === "zip" || ext === "rar") return "📦";
+    if (ext === "html" || ext === "htm") return "🌐";
+    if (ext === "php") return "🐘";
+    if (ext === "js") return "⚡";
+    if (ext === "css") return "🎨";
+    if (ext === "pdf") return "📄";
+    return "📎";
+  }
+
+  function fmtOctetsCoffre(n) {
+    var b = Number(n || 0);
+    if (b < 1024) return b + " o";
+    if (b < 1024 * 1024) return (Math.round((b / 1024) * 10) / 10) + " Ko";
+    return (Math.round((b / (1024 * 1024)) * 100) / 100) + " Mo";
+  }
+
+  function telechargerFichierCoffreBlob(item) {
+    if (!item || !item.dataUrl) return;
+    try {
+      var parts = String(item.dataUrl).split(",");
+      if (parts.length < 2) return;
+      var meta = parts[0];
+      var b64 = parts.slice(1).join(",");
+      var m = meta.match(/data:([^;]+)/);
+      var mime = (m && m[1]) || item.mime || "application/octet-stream";
+      var bin = atob(b64);
+      var u8 = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      var blob = new Blob([u8], { type: mime });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = item.nomFichier || "fichier_tp";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1800);
+      afficherToastSynchro("📥 Téléchargement de « " + (item.nomFichier || "fichier") + " » lancé !");
+    } catch (e) {
+      alert("⚠️ Impossible de télécharger ce fichier.");
+    }
+  }
+
+  function majBoutonCoffreMenuEleve() {
+    var mesFichiers = obtenirFichiersCoffrePourMoi();
+    var btnPan = document.getElementById("sti-btn-coffre-pan");
+    if (btnPan) {
+      btnPan.textContent = "🗂️ Fichiers TP du Prof (" + mesFichiers.length + ")";
+      btnPan.style.background = mesFichiers.length ? "#ffd54f" : "#fef3c7";
+      btnPan.style.color = "#23201a";
+    }
+  }
+
+  function afficherNotificationNouveauFichierCoffre(item) {
+    if (estDansIframeModale() || estSessionAdminVerifiee()) return;
+    if (!estCoffrePourMaClasse(item)) return;
+    var vus = {};
+    try { vus = JSON.parse(localStorage.getItem(CLE_COFFRE_VUS) || "{}"); } catch (e) {}
+    if (vus[item.id]) return;
+    vus[item.id] = 1;
+    try { localStorage.setItem(CLE_COFFRE_VUS, JSON.stringify(vus)); } catch (e) {}
+
+    var ex = document.getElementById("sti-banniere-coffre-tp");
+    if (ex) ex.remove();
+
+    var ban = document.createElement("div");
+    ban.id = "sti-banniere-coffre-tp";
+    ban.className = "sti-no-print";
+    ban.style.cssText =
+      "position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483646;" +
+      "width:min(540px,94vw);background:#fffdf7;color:#23201a;border:3px solid #23201a;border-radius:18px;" +
+      "padding:14px 16px;box-shadow:6px 6px 0 #d97706,0 14px 32px rgba(0,0,0,.35);font:700 13px/1.4 system-ui,'Segoe UI',sans-serif;color-scheme:light;";
+
+    ban.innerHTML =
+      "<div style='display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px'>" +
+        "<span style='background:#fef3c7;color:#92400e;border:1.5px solid #23201a;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:900'>🗂️ Nouveau fichier TP distribué par M. Essouyah</span>" +
+        "<button type='button' id='sti-ban-cf-close' style='border:1.5px solid #23201a;background:#c0392b;color:#fff;border-radius:8px;width:28px;height:26px;font-weight:900;cursor:pointer'>✕</button>" +
+      "</div>" +
+      "<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px'>" +
+        "<span style='font-size:28px'>" + iconeExtCoffre(item.nomFichier) + "</span>" +
+        "<div style='min-width:0;flex:1'>" +
+          "<div style='font-weight:900;font-size:14.5px;color:#23201a'>" + esc(item.titre || item.nomFichier) + "</div>" +
+          "<div style='font-size:12px;color:#6b6152'>Fichier : <code>" + esc(item.nomFichier) + "</code> (" + fmtOctetsCoffre(item.taille) + ")</div>" +
+        "</div>" +
+      "</div>" +
+      "<div style='display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap'>" +
+        "<button type='button' id='sti-ban-cf-all' style='border:2px solid #23201a;border-radius:999px;padding:7px 13px;font-size:12px;font-weight:800;background:#f3ead9;color:#23201a;cursor:pointer'>📦 Voir tous les fichiers</button>" +
+        "<button type='button' id='sti-ban-cf-dl' style='border:2px solid #23201a;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:900;background:linear-gradient(125deg,#177245,#2ecc71);color:#fff;cursor:pointer;box-shadow:2px 2px 0 #23201a'>📥 Télécharger le fichier du TP</button>" +
+      "</div>";
+
+    (document.body || document.documentElement).appendChild(ban);
+
+    ban.querySelector("#sti-ban-cf-close").addEventListener("click", function () { ban.remove(); });
+    ban.querySelector("#sti-ban-cf-dl").addEventListener("click", function () {
+      telechargerFichierCoffreBlob(item);
+      ban.remove();
+    });
+    ban.querySelector("#sti-ban-cf-all").addEventListener("click", function () {
+      ban.remove();
+      window.ouvrirCoffreTpEleveSTI();
+    });
+  }
+
+  window.__stiTraiterSignalCoffreTp = function (payload, depuisPoll) {
+    if (!payload || payload.type !== "coffre_tp") return;
+    if (payload.action === "clear") {
+      tsClearCoffreEleve = Math.max(tsClearCoffreEleve, Number(payload.ts || Date.now()));
+      mapCoffreEleve = {};
+      sauverCacheCoffreLocal();
+      majBoutonCoffreMenuEleve();
+      return;
+    }
+    if (payload.action === "del" && payload.id) {
+      mapCoffreDelEleve[payload.id] = Math.max(mapCoffreDelEleve[payload.id] || 0, Number(payload.ts || Date.now()));
+      delete mapCoffreEleve[payload.id];
+      sauverCacheCoffreLocal();
+      majBoutonCoffreMenuEleve();
+      return;
+    }
+    if (payload.action === "add" && payload.id && payload.nomFichier) {
+      var t = Number(payload.ts || Date.now());
+      if (tsClearCoffreEleve && t <= tsClearCoffreEleve) return;
+      if (mapCoffreDelEleve[payload.id] && t <= mapCoffreDelEleve[payload.id]) return;
+      mapCoffreEleve[payload.id] = payload;
+      sauverCacheCoffreLocal();
+      majBoutonCoffreMenuEleve();
+      if (!depuisPoll || (Date.now() - t < 180000)) {
+        afficherNotificationNouveauFichierCoffre(payload);
+      }
+    }
+  };
+
+  window.ouvrirCoffreTpEleveSTI = function () {
+    var ex = document.getElementById("sti-modal-coffre-eleve");
+    if (ex) { ex.remove(); return; }
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-coffre-eleve";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(13,18,30,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px;font:600 13px/1.45 system-ui,'Segoe UI',sans-serif;";
+
+    var boite = document.createElement("div");
+    boite.style.cssText = "background:#fffdf7;color:#23201a;border:3px solid #23201a;border-radius:20px;max-width:600px;width:100%;max-height:88dvh;overflow-y:auto;padding:18px 20px;box-shadow:6px 6px 0 #d97706;color-scheme:light;";
+
+    var mesFichiers = obtenirFichiersCoffrePourMoi();
+    var htmlListe = "";
+    if (!mesFichiers.length) {
+      htmlListe =
+        "<div style='text-align:center;padding:22px 14px;background:#f9f1e3;border:2px dashed #c7baa5;border-radius:14px;color:#6b6152;font-weight:800'>" +
+        "📭 Aucun fichier TP n'a encore été déposé par le professeur pour votre classe." +
+        "</div>";
+    } else {
+      htmlListe = mesFichiers.map(function (it) {
+        return (
+          "<div style='display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#f9f1e3;border:2px solid #23201a;border-radius:14px;padding:10px 13px;margin-bottom:8px;box-shadow:2.5px 2.5px 0 #23201a'>" +
+            "<div style='display:flex;align-items:center;gap:10px;min-width:0;flex:1'>" +
+              "<span style='font-size:24px'>" + iconeExtCoffre(it.nomFichier) + "</span>" +
+              "<div style='min-width:0'>" +
+                "<div style='font-weight:900;font-size:13.5px;color:#23201a'>" + esc(it.titre || it.nomFichier) + "</div>" +
+                "<div style='font-size:11.5px;color:#6b6152;font-weight:800'><code>" + esc(it.nomFichier) + "</code> · " + fmtOctetsCoffre(it.taille) + "</div>" +
+              "</div>" +
+            "</div>" +
+            "<button type='button' data-cf-dl='" + esc(it.id) + "' style='border:2px solid #23201a;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:900;background:linear-gradient(125deg,#177245,#2ecc71);color:#fff;cursor:pointer;box-shadow:2px 2px 0 #23201a'>📥 Télécharger</button>" +
+          "</div>"
+        );
+      }).join("");
+    }
+
+    boite.innerHTML =
+      "<div style='display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px'>" +
+        "<strong style='font-size:16px;font-weight:900;color:#23201a'>🗂️ Coffre des Fichiers TP du Professeur (" + mesFichiers.length + ")</strong>" +
+        "<button type='button' id='sti-cf-el-close' style='border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:32px;height:30px;font-weight:900;cursor:pointer'>✕</button>" +
+      "</div>" +
+      "<p style='font-size:12.5px;color:#5a5244;margin:0 0 12px;font-weight:700'>Téléchargez en 1 clic les fichiers de départ (bases <code>.sql</code>, archives <code>.zip</code>, squelettes <code>.html</code> / <code>.php</code>) partagés par M. Aymen Essouyah :</p>" +
+      "<div>" + htmlListe + "</div>";
+
+    fond.appendChild(boite);
+    (document.body || document.documentElement).appendChild(fond);
+
+    boite.querySelectorAll("button[data-cf-dl]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idC = btn.getAttribute("data-cf-dl");
+        var item = mapCoffreEleve[idC];
+        if (item) telechargerFichierCoffreBlob(item);
+      });
+    });
+    boite.querySelector("#sti-cf-el-close").addEventListener("click", function () { fond.remove(); });
+    fond.addEventListener("click", function (e) { if (e.target === fond) fond.remove(); });
+  };
+
+  /* Modale rapide pour le Professeur directement depuis n'importe quelle page du site */
+  window.ouvrirCoffreAdminSurSiteSTI = function () {
+    var ex = document.getElementById("sti-modal-coffre-admin-site");
+    if (ex) { ex.remove(); return; }
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-coffre-admin-site";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:12px;font:600 13px/1.45 system-ui,'Segoe UI',sans-serif;color:#23201a;";
+
+    var boite = document.createElement("div");
+    boite.style.cssText = "width:100%;max-width:600px;max-height:90dvh;overflow-y:auto;background:#fffdf7;color:#23201a;border:2.5px solid #23201a;border-radius:18px;padding:18px 20px;box-shadow:6px 6px 0 #d97706;color-scheme:light;";
+    boite.innerHTML =
+      "<div style='display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:2px solid #23201a;padding-bottom:8px;margin-bottom:10px'>" +
+        "<strong style='font-size:16px;font-weight:900'>🗂️ Coffre de Partage Rapide — Distribuer un fichier TP</strong>" +
+        "<button type='button' id='sti-site-cf-close' style='border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:32px;height:30px;font-weight:900;cursor:pointer'>✕</button>" +
+      "</div>" +
+      "<div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px'>" +
+        "<div>" +
+          "<label style='font-size:11.5px;font-weight:800;display:block;margin-bottom:3px'>🏫 Classe cible :</label>" +
+          "<select id='sti-site-cf-cible' style='width:100%;border:2px solid #23201a;border-radius:10px;padding:7px;font-weight:800;background:#fff;color:#23201a'>" +
+            "<option value='*'>🌐 Toutes les classes</option>" +
+            "<option value='3SI'>🏫 Toutes les 3e SI</option>" +
+            "<option value='4SI'>🏫 Toutes les 4e SI</option>" +
+            "<option value='3SI1'>🏫 3SI1</option><option value='3SI2'>🏫 3SI2</option><option value='3SI3'>🏫 3SI3</option>" +
+            "<option value='4SI1'>🏫 4SI1</option><option value='4SI2'>🏫 4SI2</option><option value='4SI3'>🏫 4SI3</option><option value='4SI4'>🏫 4SI4</option><option value='4SI5'>🏫 4SI5</option>" +
+          "</select>" +
+        "</div>" +
+        "<div>" +
+          "<label style='font-size:11.5px;font-weight:800;display:block;margin-bottom:3px'>📌 Titre / Consigne :</label>" +
+          "<input type='text' id='sti-site-cf-titre' placeholder='Ex : Base SQL du TP…' style='width:100%;border:2px solid #23201a;border-radius:10px;padding:7px;font-weight:800;background:#fff;color:#23201a;box-sizing:border-box' />" +
+        "</div>" +
+      "</div>" +
+      "<label style='font-size:11.5px;font-weight:800;display:block;margin-bottom:4px'>📎 Choisir un fichier (.zip, .sql, .html, .php, .pdf…) :</label>" +
+      "<input type='file' id='sti-site-cf-file' style='width:100%;padding:8px;border:2px dashed #23201a;border-radius:10px;background:#fff;margin-bottom:10px;box-sizing:border-box;cursor:pointer' />" +
+      "<div style='display:flex;justify-content:flex-end;gap:8px'>" +
+        "<button type='button' id='sti-site-cf-send' style='border:2px solid #23201a;border-radius:999px;padding:8px 18px;font-size:13px;font-weight:900;background:linear-gradient(125deg,#d97706,#b45309);color:#fff;cursor:pointer;box-shadow:3px 3px 0 #23201a'>📤 Distribuer immédiatement</button>" +
+      "</div>";
+
+    fond.appendChild(boite);
+    (document.body || document.documentElement).appendChild(fond);
+
+    boite.querySelector("#sti-site-cf-close").addEventListener("click", function () { fond.remove(); });
+    fond.addEventListener("click", function (e) { if (e.target === fond) fond.remove(); });
+
+    boite.querySelector("#sti-site-cf-send").addEventListener("click", function () {
+      var fInp = boite.querySelector("#sti-site-cf-file");
+      var f = fInp && fInp.files && fInp.files[0];
+      if (!f) { alert("⚠️ Veuillez sélectionner un fichier à distribuer."); return; }
+      if (f.size > 4.5 * 1024 * 1024) { alert("⚠️ Fichier trop volumineux (> 4,5 Mo)."); return; }
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        var idNew = "cf_" + Date.now();
+        var cibleVal = boite.querySelector("#sti-site-cf-cible").value || "*";
+        var titreVal = (boite.querySelector("#sti-site-cf-titre").value || "").trim() || ("Fichier TP : " + f.name);
+        var payload = {
+          type: "coffre_tp",
+          action: "add",
+          id: idNew,
+          cible: cibleVal,
+          titre: titreVal,
+          nomFichier: f.name,
+          taille: f.size,
+          mime: f.type || "application/octet-stream",
+          dataUrl: String(ev.target.result || ""),
+          ts: Date.now()
+        };
+        if (currentUid) {
+          sb.from("acces").insert({
+            user_id: currentUid,
+            page: "COFFRE_TP:" + idNew,
+            lieu: JSON.stringify(payload),
+            duree_sec: 0
+          }).then(function () {});
+        }
+        try {
+          sb.channel("sti-diffusion").send({ type: "broadcast", event: "coffre_tp", payload: payload });
+        } catch (e) {}
+        fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        }).catch(function () {});
+        fond.remove();
+        afficherToastSynchro("📤 Fichier « " + f.name + " » distribué aux élèves !");
+      };
+      reader.readAsDataURL(f);
+    });
+  };
+
+  function synchroniserCoffreTpDepuisServeur() {
+    lireCacheCoffreLocal();
+    majBoutonCoffreMenuEleve();
+    if (!navigator.onLine) return;
+    sb.from("acces")
+      .select("page,lieu,debut")
+      .like("page", "COFFRE_TP%")
+      .order("debut", { ascending: false })
+      .limit(50)
+      .then(function (r) {
+        if (!r || !r.data) return;
+        for (var i = r.data.length - 1; i >= 0; i--) {
+          var row = r.data[i];
+          try {
+            var p = JSON.parse(row.lieu || "{}");
+            if (p && p.type === "coffre_tp") {
+              window.__stiTraiterSignalCoffreTp(p, true);
+            }
+          } catch (e) {}
+        }
+      })
+      .catch(function () {});
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { setTimeout(synchroniserCoffreTpDepuisServeur, 400); });
+  } else {
+    setTimeout(synchroniserCoffreTpDepuisServeur, 400);
+  }
 })();
 
