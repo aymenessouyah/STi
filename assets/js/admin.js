@@ -6034,6 +6034,195 @@
     });
   }
 
+  /* ══════════════════════════════════════════════════════════
+     📺 TABLEAU BLANC LIVE STI (PROJECTION DE CODE / CORRIGÉ EN DIRECT)
+     ══════════════════════════════════════════════════════════ */
+  var modalTbLive = document.getElementById("modal-tableau-blanc");
+  var btnTbLiveTop = document.getElementById("btn-tb-live-top");
+  var btnTbLiveCard = document.getElementById("btn-tb-live-card");
+  var btnFermerTbLiveX = document.getElementById("btn-fermer-tb-live-x");
+  var btnFermerTbLive = document.getElementById("btn-fermer-tb-live");
+  var selTbCible = document.getElementById("tb-live-cible");
+  var selTbLang = document.getElementById("tb-live-lang");
+  var inpTbTitre = document.getElementById("tb-live-titre");
+  var txtTbCode = document.getElementById("tb-live-code");
+  var txtTbNote = document.getElementById("tb-live-note");
+  var chkTbCopie = document.getElementById("tb-live-chk-copie");
+  var btnTbSend = document.getElementById("btn-tb-live-send");
+  var btnTbStop = document.getElementById("btn-tb-live-stop");
+  var badgeTbStatut = document.getElementById("tb-live-statut-badge");
+
+  var MODELES_TB_LIVE = {
+    sql: {
+      lang: "SQL",
+      titre: "Corrigé SQL — Jointure (JOIN), Agrégation (COUNT/SUM) & GROUP BY",
+      code: "SELECT C.Cin, C.Nom, COUNT(L.IdLoc) AS NbLocations, SUM(L.Montant) AS TotalPaye\nFROM CLIENT C\nINNER JOIN LOCATION L ON C.Cin = L.Cin\nWHERE YEAR(L.DateLoc) = 2026\nGROUP BY C.Cin, C.Nom\nHAVING COUNT(L.IdLoc) >= 2\nORDER BY TotalPaye DESC;",
+      note: "Règle d'or SQL Bac STI : toute colonne présente dans SELECT (hors COUNT, SUM, AVG, MIN, MAX) doit obligatoirement figurer dans GROUP BY."
+    },
+    php: {
+      lang: "PHP / MySQLi",
+      titre: "Corrigé PHP & MySQLi — Connexion, Récupération $_POST et Requête",
+      code: "<?php\n$con = mysqli_connect(\"localhost\", \"root\", \"\", \"bd_bac2026\");\nif (!$con) {\n    die(\"Erreur de connexion : \" . mysqli_connect_error());\n}\n\n$cin = $_POST[\"cin\"];\n$nom = $_POST[\"nom\"];\n\n$sql = \"INSERT INTO client (cin, nom) VALUES ('$cin', '$nom')\";\n$res = mysqli_query($con, $sql);\n\nif ($res && mysqli_affected_rows($con) > 0) {\n    echo \"<p style='color:green'>✅ Enregistrement effectué avec succès !</p>\";\n} else {\n    echo \"<p style='color:red'>❌ Échec de l'insertion : \" . mysqli_error($con) . \"</p>\";\n}\nmysqli_close($con);\n?>",
+      note: "Vérifiez toujours que les attributs name='...' du formulaire HTML correspondent exactement aux clés de $_POST['...']."
+    },
+    js: {
+      lang: "JavaScript",
+      titre: "Corrigé JavaScript — Fonction de contrôle de saisie d'un formulaire",
+      code: "function verifFormulaire() {\n  var cin = document.getElementById(\"cin\").value.trim();\n  var nom = document.getElementById(\"nom\").value.trim();\n\n  // 1) Vérifier que le CIN comporte exactement 8 chiffres commençant par 0 ou 1\n  if (cin.length !== 8 || isNaN(cin) || (cin.charAt(0) !== \"0\" && cin.charAt(0) !== \"1\")) {\n    alert(\"❌ Le numéro CIN doit comporter 8 chiffres et commencer par 0 ou 1.\");\n    return false;\n  }\n\n  // 2) Vérifier que le nom n'est pas vide\n  if (nom.length < 2) {\n    alert(\"❌ Veuillez saisir un nom valide.\");\n    return false;\n  }\n\n  return true;\n}",
+      note: "Dans la balise <form>, appelez la fonction avec : onsubmit=\"return verifFormulaire()\" pour bloquer l'envoi en cas d'erreur."
+    },
+    html: {
+      lang: "HTML5 / CSS3",
+      titre: "Corrigé HTML5 & CSS3 — Mise en page Flexbox et Formulaire",
+      code: "<!-- Structure HTML5 -->\n<form action=\"traitement.php\" method=\"post\" onsubmit=\"return verifFormulaire()\">\n  <fieldset>\n    <legend>Inscription Candidat STI</legend>\n    <label for=\"cin\">N° CIN :</label>\n    <input type=\"text\" id=\"cin\" name=\"cin\" maxlength=\"8\" required />\n    <button type=\"submit\">Envoyer</button>\n  </fieldset>\n</form>\n\n/* Style CSS3 Flexbox */\nform fieldset {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  max-width: 420px;\n  margin: 0 auto;\n}",
+      note: "N'oubliez jamais l'attribut name=\"...\" sur chaque champ (<input>, <select>, <textarea>) pour que PHP puisse recevoir la valeur."
+    }
+  };
+
+  function remplirCiblesTableauBlanc() {
+    if (!selTbCible) return;
+    var valAct = selTbCible.value || "*";
+    var classes = obtenirClassesActives();
+    selTbCible.innerHTML =
+      '<option value="*">🌐 Toutes les classes</option>' +
+      '<option value="3SI">🏫 Toutes les 3e SI</option>' +
+      '<option value="4SI">🏫 Toutes les 4e SI</option>';
+    classes.forEach(function (c) {
+      var o = document.createElement("option");
+      o.value = c;
+      o.textContent = "🏫 Classe " + c;
+      selTbCible.appendChild(o);
+    });
+    var actifs = profils.filter(function (p) { return p.statut === "actif"; });
+    actifs.forEach(function (p) {
+      var o = document.createElement("option");
+      o.value = "UID:" + p.id;
+      o.textContent = "👤 " + (nomPrenomTexte(p) || contact(p)) + " (" + (p.classe || "—") + ")";
+      selTbCible.appendChild(o);
+    });
+    selTbCible.value = valAct;
+    if (!selTbCible.value) selTbCible.value = "*";
+  }
+
+  function majUiTableauBlancAdmin() {
+    remplirCiblesTableauBlanc();
+    try {
+      var sauv = JSON.parse(localStorage.getItem("sti-tb-live-admin") || "null");
+      if (sauv && typeof sauv === "object") {
+        if (selTbCible && sauv.cible) selTbCible.value = sauv.cible;
+        if (selTbLang && sauv.lang) selTbLang.value = sauv.lang;
+        if (inpTbTitre && !inpTbTitre.value && sauv.titre) inpTbTitre.value = sauv.titre;
+        if (txtTbCode && !txtTbCode.value && sauv.code) txtTbCode.value = sauv.code;
+        if (txtTbNote && !txtTbNote.value && sauv.note) txtTbNote.value = sauv.note;
+        if (chkTbCopie && typeof sauv.autoriserCopie === "boolean") chkTbCopie.checked = sauv.autoriserCopie;
+        if (badgeTbStatut) {
+          if (sauv.actif) {
+            badgeTbStatut.style.background = "#fde2e6";
+            badgeTbStatut.style.color = "#c0392b";
+            badgeTbStatut.style.borderColor = "#c0392b";
+            badgeTbStatut.textContent = "🔴 EN DIRECT (" + (sauv.cible === "*" ? "Global" : sauv.cible) + ")";
+          } else {
+            badgeTbStatut.style.background = "#f3ead9";
+            badgeTbStatut.style.color = "#5a5244";
+            badgeTbStatut.style.borderColor = "#23201a";
+            badgeTbStatut.textContent = "⚪ Hors projection";
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  function ouvrirModalTableauBlanc() {
+    majUiTableauBlancAdmin();
+    if (modalTbLive) modalTbLive.classList.add("visible");
+  }
+  function fermerModalTableauBlanc() {
+    if (modalTbLive) modalTbLive.classList.remove("visible");
+  }
+  if (btnTbLiveTop) btnTbLiveTop.addEventListener("click", ouvrirModalTableauBlanc);
+  if (btnTbLiveCard) btnTbLiveCard.addEventListener("click", ouvrirModalTableauBlanc);
+  if (btnFermerTbLiveX) btnFermerTbLiveX.addEventListener("click", fermerModalTableauBlanc);
+  if (btnFermerTbLive) btnFermerTbLive.addEventListener("click", fermerModalTableauBlanc);
+  if (modalTbLive) {
+    modalTbLive.addEventListener("click", function (e) {
+      if (e.target === modalTbLive) fermerModalTableauBlanc();
+    });
+  }
+
+  document.querySelectorAll(".btn-tpl-tb").forEach(function (btnTpl) {
+    btnTpl.addEventListener("click", function () {
+      var cle = btnTpl.getAttribute("data-tpl");
+      if (cle === "clear") {
+        if (inpTbTitre) inpTbTitre.value = "";
+        if (txtTbCode) txtTbCode.value = "";
+        if (txtTbNote) txtTbNote.value = "";
+        return;
+      }
+      var m = MODELES_TB_LIVE[cle];
+      if (!m) return;
+      if (selTbLang) selTbLang.value = m.lang;
+      if (inpTbTitre) inpTbTitre.value = m.titre;
+      if (txtTbCode) txtTbCode.value = m.code;
+      if (txtTbNote) txtTbNote.value = m.note;
+    });
+  });
+
+  function diffuserTableauBlancLive(actif) {
+    var codeVal = txtTbCode ? txtTbCode.value : "";
+    if (actif && !codeVal.trim()) {
+      msg("⚠️ Veuillez saisir ou choisir un extrait de code à projeter aux élèves.", "err");
+      if (txtTbCode) txtTbCode.focus();
+      return;
+    }
+    var payload = {
+      type: "tableau_blanc",
+      id: "tb_" + Date.now(),
+      actif: Boolean(actif),
+      cible: selTbCible ? selTbCible.value : "*",
+      lang: selTbLang ? selTbLang.value : "SQL",
+      titre: (inpTbTitre && inpTbTitre.value.trim()) ? inpTbTitre.value.trim() : "Corrigé & Explication en direct — M. Aymen Essouyah",
+      code: codeVal,
+      note: txtTbNote ? txtTbNote.value.trim() : "",
+      autoriserCopie: Boolean(chkTbCopie && chkTbCopie.checked),
+      ts: Date.now()
+    };
+    try { localStorage.setItem("sti-tb-live-admin", JSON.stringify(payload)); } catch (e) {}
+    majUiTableauBlancAdmin();
+
+    if (adminUid) {
+      sb.from("acces").insert({
+        user_id: adminUid,
+        page: "TABLEAU_BLANC",
+        lieu: JSON.stringify(payload),
+        duree_sec: 0
+      }).then(function () {});
+    }
+    try {
+      sb.channel("sti-diffusion").send({ type: "broadcast", event: "tableau_blanc", payload: payload });
+    } catch (e) {}
+    fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).catch(function () {});
+
+    if (actif) {
+      msg("📺 Tableau Blanc projeté en direct sur les écrans (" + (payload.cible === "*" ? "Toutes les classes" : payload.cible) + ") !", "ok");
+    } else {
+      msg("⏹️ Tableau Blanc refermé sur les écrans des élèves.", "ok");
+    }
+  }
+
+  if (btnTbSend) {
+    btnTbSend.addEventListener("click", function () {
+      diffuserTableauBlancLive(true);
+    });
+  }
+  if (btnTbStop) {
+    btnTbStop.addEventListener("click", function () {
+      diffuserTableauBlancLive(false);
+    });
+  }
+
   if (inpPinAdmin) {
     inpPinAdmin.addEventListener("change", function () {
       var v = (inpPinAdmin.value || "").trim() || "2026";

@@ -74,7 +74,7 @@ cours complets, leçons animées pas à pas, annexes officielles, flashcards 3D,
 ### 📊 4. Tableau de bord Administrateur temps réel & Pilotage de classe (`admin.html`)
 - **Sécurité d'accès exclusive, Verrou anti-flash `0 ms`, Version & Jauge Supabase** :
   - Accès à `admin.html` **strictement réservé au seul compte administrateur** avec protection immédiate dès `0 ms` avant le premier rendu.
-  - Affichage permanent de la version (`STI V2.0 · v111`) accompagné du **pourcentage et de l'espace restant en direct dans Supabase** (sur le quota de 500 Mo via `public.admin_taille_base()`).
+  - Affichage permanent de la version (`STI V2.0 · v112`) accompagné du **pourcentage et de l'espace restant en direct dans Supabase** (sur le quota de 500 Mo via `public.admin_taille_base()`).
   - **🔒 Verrouillage rapide de l'écran Admin par code PIN (`#modal-verrou-ecran-admin`)** : permet au professeur de verrouiller l'écran du tableau de bord en 1 clic lorsqu'il circule dans les rangs.
 - **📋 Feuille d'appel & présence automatique du jour par classe (`#modal-appel-presence`)** :
   - Croisement automatique des abonnés de la classe choisie avec les connexions du jour : liste claire des **`🟢 Présents`** (avec heure exacte de 1re connexion et appareil) et des **`🔴 Absents`**, prête à être **imprimée (`🖨️`)** ou **exportée en CSV (`📥`)**.
@@ -83,6 +83,8 @@ cours complets, leçons animées pas à pas, annexes officielles, flashcards 3D,
   - **⏸️ Pause écran individuel (`⏸️` / `▶️`)** : bouton direct sur chaque ligne et nœud d'abonné permettant de geler/dégeler instantanément l'écran d'un élève précis avec le message plein écran *« ⏸️ Écran mis en pause par M. Essouyah — Regardez le tableau ! »*.
 - **⚡ Question Flash / Sondage Live en classe** :
   - Lancement en direct depuis `admin.html` **ou depuis n'importe quelle page du site** (où le bouton **`⚡`** remplace le bouton Imprimer `🖨️` pour l'administrateur) d'une question minutée avec réception instantanée des réponses des élèves, barres de progression par option (`A/B/C/D`, `Vrai/Faux` ou texte) et révélation de la bonne réponse.
+- **📺 Tableau Blanc Live du Prof (Diffusion d'un extrait de code ou corrigé en direct)** :
+  - Depuis `admin.html` (`📺 Tableau Blanc`) **ou depuis n'importe quelle page du site** (bouton flottant **`📺`** du dock Admin avec pré-remplissage automatique du code sélectionné), projection instantanée sur tous les écrans de la classe choisie (ou d'un élève individuel) d'un bloc de code numéroté (`SQL`, `PHP / MySQLi`, `JavaScript`, `HTML5 / CSS3`) accompagné des remarques du professeur, d'une option Lecture seule / Copie autorisée (`📋 Copier` / `💻 Bac à sable`), d'une réduction en vignette flottante et d'un arrêt à distance (`⏹️ Fermer chez les élèves`).
 - **Gestion complète des abonnés, des classes et des lycées** :
   - L'administrateur n'apparaît jamais dans la liste des abonnés.
   - Ajout, renommage (avec migration automatique des élèves) et suppression de **classes** et de **lycées** synchronisés sur tous les appareils.
@@ -130,7 +132,7 @@ STI-Atelier-V2.0/
 ├── admin.html                        # 📊 Tableau de bord Admin temps réel, Appel, Sécurité, Flash & Messenger
 ├── bac-pratique.html                 # 🧪 Atelier Épreuve Pratique Bac STI (réservé 4SI / Labo / Admin)
 ├── carte-visite.html                 # 🪪 Carte de visite numérique AE (.vcf & impression réservés Admin)
-├── sw.js                             # ⚙️ Service Worker PWA (cache 100 % hors-ligne sti-atelier-v111)
+├── sw.js                             # ⚙️ Service Worker PWA (cache 100 % hors-ligne sti-atelier-v112)
 ├── manifest.webmanifest              # 📱 Manifeste d'installation PWA
 ├── robots.txt                        # 🤖 Directives SEO & blocage des crawlers IA
 ├── sitemap.xml                       # 🗺️ Plan du site
@@ -208,7 +210,7 @@ STI-Atelier-V2.0/
 
 ---
 
-## 🚀 Architecture & Mode 100 % Hors-ligne (`sti-atelier-v111`)
+## 🚀 Architecture & Mode 100 % Hors-ligne (`sti-atelier-v112`)
 
 1. **Service Worker (`sw.js`) sans aucun lien mort** :
    - Pré-chargement automatique en tâche de fond de l'ensemble des fichiers du site (cours, animations, exercices, quiz, PDF, archives `.zip`, polices et icônes) avec résolution exacte des sous-dossiers (`/cssanimee/`, `/Positionnement-animee/`, etc.).

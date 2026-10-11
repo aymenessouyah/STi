@@ -1181,10 +1181,10 @@
           <span id="titre-tb-admin" style="color:#177245;transition:color .25s ease" title="🟢 En ligne">Tableau de bord STI V2.0</span>
           <span class="badge-temoin-examen" id="badge-temoin-examen" role="button" tabindex="0" title="🟢 Accès aux cours ouvert — Cliquer pour ouvrir le Centre de Sécurité / Mode Examen">🟢 Accès ouvert</span>
           <span class="badge-admin-gold">👑 Admin Gold</span>
-          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v111</span>
+          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v112</span>
           <span class="badge-supabase" id="badge-supabase-quota" title="Espace disponible dans la base Supabase (Quota 500 Mo) — cliquer pour voir le détail">🗄️ Supabase : <b id="sb-pct-restant">99,8 %</b> restant (<span id="sb-qte-restante">499,2 Mo / 500 Mo</span>)<span class="jauge-sb-mini" aria-hidden="true"><i id="sb-jauge-barre" style="width:99.8%"></i></span></span>
         </h1>
-        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v111)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
+        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v112)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
       </div>
     </div>
     <div class="barre-util">
@@ -1192,6 +1192,7 @@
       <a class="btn-util mob-extra" href="carte-visite.html" title="Ouvrir et partager la carte de visite électronique avec QR code">🪪 <span class="lbl-pc">Carte visite</span><span class="lbl-mob">Carte</span></a>
       <button class="btn-util" id="btn-messenger-top" type="button" title="Ouvrir la messagerie directe Messenger STI avec les candidats" style="background:#fff3e0;border-color:#f4511e;color:#d84315">💬 <span class="lbl-pc">Messenger</span><span class="lbl-mob">Chat</span> <span id="badge-msn-top" style="display:none;background:#ffd54f;color:#23201a;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util" id="btn-flash-top" type="button" title="Lancer une Question Flash / Sondage Live en classe" style="background:#fff8e1;border-color:#d97706;color:#b45309">⚡ <span class="lbl-pc">Question Flash</span><span class="lbl-mob">Flash</span></button>
+      <button class="btn-util" id="btn-tb-live-top" type="button" title="Tableau Blanc Live : projeter un extrait de code ou un corrigé en direct sur les écrans des élèves" style="background:#e0f2fe;border-color:#0284c7;color:#0369a1">📺 <span class="lbl-pc">Tableau Blanc</span><span class="lbl-mob">Code Live</span></button>
       <button class="btn-util mob-extra" id="btn-mains-top" type="button" title="File d'attente des élèves ayant levé la main pour demander de l'aide en TP" style="background:#ede9fe;border-color:#6d28d9;color:#6d28d9">🙋‍♂️ <span class="lbl-pc">Mains levées</span><span class="lbl-mob">Aide</span> <span id="badge-mains-top" style="display:none;background:#6d28d9;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util mob-extra" id="btn-palmares-top" type="button" title="Palmarès &amp; Podium par classe (Quiz, Questions Flash et Assiduité)" style="background:linear-gradient(120deg,#fff3b0,#ffd54f);border-color:#23201a;color:#6d4c00">🏆 <span class="lbl-pc">Palmarès</span><span class="lbl-mob">Top 3</span></button>
       <button class="btn-util" id="btn-appel-top" type="button" title="Feuille d'appel &amp; présence automatique du jour par classe (Présents vs Absents)" style="background:#e3f6e8;border-color:#177245;color:#177245">📋 <span class="lbl-pc">Appel / Présence</span><span class="lbl-mob">Appel</span></button>
@@ -1220,6 +1221,14 @@
       <span class="ca-corps">
         <span class="ca-titre">Question Flash / Sondage</span>
         <span class="ca-desc">QCM en direct sur les écrans &amp; résultats live</span>
+      </span>
+    </button>
+
+    <button class="carte-action" id="btn-tb-live-card" type="button">
+      <span class="ca-ico" style="background:linear-gradient(135deg,#e0f2fe,#0284c7);color:#fff">📺</span>
+      <span class="ca-corps">
+        <span class="ca-titre">Tableau Blanc Live</span>
+        <span class="ca-desc">Projeter un code ou corrigé en direct aux élèves</span>
       </span>
     </button>
 
@@ -1693,6 +1702,76 @@
       <div class="modal-actions">
         <button type="button" id="btn-annuler-aff">Annuler</button>
         <button type="button" class="btn-valider" id="btn-confirmer-aff">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boîte modale : 📺 Tableau Blanc Live STI (Diffusion d'un extrait de code ou corrigé en direct) -->
+  <div class="modal-fond" id="modal-tableau-blanc" role="dialog" aria-modal="true">
+    <div class="modal-boite" style="max-width:760px;width:min(760px,96vw);max-height:92dvh;overflow-y:auto;padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:17px">📺 Tableau Blanc Live STI — Projeter un code ou corrigé aux élèves</h3>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="tb-live-statut-badge" style="background:#f3ead9;color:#5a5244;border:1.5px solid #23201a;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:900">⚪ Hors projection</span>
+          <button type="button" id="btn-fermer-tb-live-x" style="border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:34px;height:32px;font-weight:900;cursor:pointer">✕</button>
+        </div>
+      </div>
+
+      <p style="font-size:12.5px;color:#5a5244;margin:0 0 10px;font-weight:700">
+        Diffusez instantanément un extrait de code coloré (<b>SQL, PHP/MySQLi, JavaScript, HTML5/CSS3</b>) ou le corrigé d'une question sur tous les écrans de la classe choisie.
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;margin-bottom:10px">
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">🏫 Classe ou élève cible :</label>
+          <select id="tb-live-cible" style="margin-bottom:0">
+            <option value="*">🌐 Toutes les classes</option>
+            <option value="3SI">🏫 Toutes les 3e SI</option>
+            <option value="4SI">🏫 Toutes les 4e SI</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">💻 Langage / Module :</label>
+          <select id="tb-live-lang" style="margin-bottom:0">
+            <option value="SQL">🗄️ SQL (Requêtes / LDD / LMD)</option>
+            <option value="PHP / MySQLi">🐘 PHP &amp; MySQLi</option>
+            <option value="JavaScript">⚡ JavaScript (DOM / Validation)</option>
+            <option value="HTML5 / CSS3">🎨 HTML5 &amp; CSS3</option>
+            <option value="Consigne / Algo">📝 Algorithme / Consigne / Barème</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Modèles rapides en 1 clic -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;background:#f9f1e3;border:1.5px solid #23201a;border-radius:11px;padding:7px 10px">
+        <span style="font-size:11.5px;font-weight:900;color:#23201a">⚡ Modèles rapides :</span>
+        <button type="button" class="btn-tpl-tb" data-tpl="sql" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">🗄️ SQL JOIN + GROUP BY</button>
+        <button type="button" class="btn-tpl-tb" data-tpl="php" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">🐘 PHP MySQLi</button>
+        <button type="button" class="btn-tpl-tb" data-tpl="js" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">⚡ JS Contrôle saisie</button>
+        <button type="button" class="btn-tpl-tb" data-tpl="html" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fff;cursor:pointer">🎨 HTML5 / Flexbox</button>
+        <button type="button" class="btn-tpl-tb" data-tpl="clear" style="border:1.5px solid #23201a;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;background:#fde2e6;color:#c0392b;cursor:pointer">🧹 Vider</button>
+      </div>
+
+      <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">📌 Titre du corrigé / de l'explication :</label>
+      <input type="text" id="tb-live-titre" placeholder="Ex : Corrigé Question 3 — Jointure SQL &amp; fonction d'agrégation" style="margin-bottom:9px" />
+
+      <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">⌨️ Code ou corrigé projeté sur l'écran des élèves :</label>
+      <textarea id="tb-live-code" rows="9" spellcheck="false" placeholder="Collez ou saisissez ici le code SQL, PHP, JS ou HTML/CSS à projeter en direct…" style="width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;background:#141a24;color:#f8fafc;border:2.5px solid #23201a;border-radius:12px;padding:12px;margin-bottom:9px;box-sizing:border-box"></textarea>
+
+      <label style="font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px">💡 Explication / Points clés du professeur (affichés sous le code) :</label>
+      <textarea id="tb-live-note" rows="2" placeholder="Ex : Attention à toujours répéter les colonnes non agrégées dans la clause GROUP BY !" style="margin-bottom:9px"></textarea>
+
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;font-weight:800;color:#23201a;background:#f3ead9;border:1.5px solid #23201a;border-radius:10px;padding:8px 11px;margin-bottom:12px">
+        <input type="checkbox" id="tb-live-chk-copie" style="width:17px;height:17px;margin:0" />
+        <span>📋 <b>Autoriser les élèves à copier ce corrigé / l'ouvrir dans le Bac à sable</b> (si décoché : lecture seule au tableau pour les obliger à taper eux-mêmes)</span>
+      </label>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:2px solid #e7dcc8;padding-top:11px">
+        <button type="button" id="btn-tb-live-stop" style="border:2px solid #23201a;border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:900;background:#fde2e6;color:#c0392b;cursor:pointer;box-shadow:2px 2px 0 #23201a">⏹️ Fermer chez les élèves</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" id="btn-fermer-tb-live" style="border:2px solid #23201a;border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:800;background:#fff;color:#23201a;cursor:pointer">Fermer la fenêtre</button>
+          <button type="button" id="btn-tb-live-send" style="border:2px solid #23201a;border-radius:999px;padding:8px 18px;font-size:13px;font-weight:900;background:linear-gradient(125deg,#0284c7,#0369a1);color:#fff;cursor:pointer;box-shadow:3px 3px 0 #23201a">📺 Projeter en direct aux élèves</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2601,7 +2680,7 @@
 </script>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=111"></script>
-<script src="assets/js/admin.js?v=111"></script>
+<script src="assets/js/config.js?v=112"></script>
+<script src="assets/js/admin.js?v=112"></script>
 </body>
 </html>

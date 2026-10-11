@@ -2522,6 +2522,162 @@
     }
   }
 
+  /* ---------- 📺 Tableau Blanc Live STI côté Élève (Code / Corrigé projeté en direct par le Prof) ---------- */
+  var dernierTbLiveIdFerme = "";
+  function afficherTableauBlancLiveEleve(tb) {
+    if (!tb || tb.type !== "tableau_blanc") return;
+    if (estSessionAdminVerifiee()) return;
+
+    var cLoc = lireCacheSessionLocal() || {};
+    var monUid = currentUid || cLoc.id || "";
+    var maCl = String(currentClasse || cLoc.classe || "").toUpperCase();
+    var cible = String(tb.cible || "*").trim();
+
+    /* Si le professeur ferme le Tableau Blanc */
+    if (!tb.actif) {
+      var modEx = document.getElementById("sti-modal-tb-eleve");
+      if (modEx) modEx.remove();
+      var pillEx = document.getElementById("sti-pill-tb-eleve");
+      if (pillEx) pillEx.remove();
+      return;
+    }
+
+    /* Ignorer un Tableau Blanc trop ancien (> 90 min) lors du poll initial */
+    if (tb.ts && (Date.now() - Number(tb.ts)) > 90 * 60 * 1000) return;
+
+    /* Vérifier si cet élève est ciblé */
+    var cibUp = cible.toUpperCase();
+    var estCible = false;
+    if (cible === "*") estCible = true;
+    else if (cibUp.indexOf("UID:") === 0) estCible = (cible.slice(4) === monUid);
+    else if (cibUp === "3SI") estCible = (maCl.indexOf("3SI") === 0);
+    else if (cibUp === "4SI") estCible = (maCl.indexOf("4SI") === 0 || maCl === "ELEVELABO3");
+    else estCible = (maCl === cibUp);
+
+    if (!estCible) return;
+    if (tb.id && tb.id === dernierTbLiveIdFerme) return;
+
+    try { jouerSonMessageSTI(); } catch (e) {}
+
+    var oldMod = document.getElementById("sti-modal-tb-eleve");
+    if (oldMod) oldMod.remove();
+    var oldPill = document.getElementById("sti-pill-tb-eleve");
+    if (oldPill) oldPill.remove();
+
+    var lignesCode = String(tb.code || "").split("\n");
+    var htmlCodeLignes = lignesCode.map(function (ln, idx) {
+      return "<div style='display:flex;gap:12px;padding:1px 0'>" +
+        "<span style='user-select:none;-webkit-user-select:none;color:#64748b;min-width:24px;text-align:right;font-weight:700;flex-shrink:0'>" + (idx + 1) + "</span>" +
+        "<span style='white-space:pre-wrap;word-break:break-word;flex:1;color:#f8fafc'>" + esc(ln || " ") + "</span>" +
+      "</div>";
+    }).join("");
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-tb-eleve";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483646;background:rgba(15,23,42,.74);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px;font:700 13.5px/1.45 system-ui,'Segoe UI',sans-serif;";
+
+    var permCopie = Boolean(tb.autoriserCopie);
+
+    fond.innerHTML =
+      "<div style='background:#fffdf7;color:#23201a;color-scheme:light;border:3px solid #23201a;border-radius:20px;max-width:740px;width:100%;max-height:92dvh;display:flex;flex-direction:column;overflow:hidden;box-shadow:7px 7px 0 #0284c7,0 22px 48px rgba(0,0,0,.42)'>" +
+        "<div style='display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;background:#f6efe2;border-bottom:2.5px solid #23201a;flex-wrap:wrap'>" +
+          "<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap'>" +
+            "<span style='background:#fde2e6;color:#c0392b;border:1.5px solid #c0392b;border-radius:999px;padding:3px 10px;font-weight:900;font-size:11.5px'>🔴 TABLEAU BLANC EN DIRECT</span>" +
+            "<span style='background:#e0f2fe;color:#0369a1;border:1.5px solid #0284c7;border-radius:999px;padding:3px 10px;font-weight:900;font-size:11.5px'>💻 " + esc(tb.lang || "Code STI") + "</span>" +
+            "<span style='font-size:11.5px;color:#5a5244;font-weight:800'>par M. Aymen Essouyah</span>" +
+          "</div>" +
+          "<div style='display:flex;align-items:center;gap:6px'>" +
+            "<button type='button' id='sti-tb-el-min' style='border:2px solid #23201a;background:#fff;color:#23201a;border-radius:10px;padding:5px 11px;font-weight:900;font-size:12px;cursor:pointer' title='Réduire en vignette en bas de l’écran pour continuer votre exercice'>🗕 Réduire</button>" +
+            "<button type='button' id='sti-tb-el-close' style='border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:32px;height:30px;font-weight:900;cursor:pointer' title='Fermer'>✕</button>" +
+          "</div>" +
+        "</div>" +
+        "<div style='padding:16px 18px;overflow-y:auto;flex:1'>" +
+          "<div style='font-size:16px;font-weight:900;color:#23201a;margin-bottom:10px'>📌 " + esc(tb.titre || "Corrigé & Explication en direct") + "</div>" +
+          "<div style='background:#0f172a;border:2.5px solid #23201a;border-radius:14px;padding:12px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55;overflow-x:auto;box-shadow:inset 0 2px 6px rgba(0,0,0,.35);" + (permCopie ? "user-select:text;-webkit-user-select:text" : "user-select:none;-webkit-user-select:none") + "'>" +
+            htmlCodeLignes +
+          "</div>" +
+          (tb.note ? (
+            "<div style='margin-top:12px;background:#fff8e1;border:2px solid #d97706;border-radius:12px;padding:10px 13px;font-size:13px;color:#23201a;font-weight:800'>" +
+              "💡 <strong style='color:#b45309'>Remarque du professeur :</strong> " + esc(tb.note) +
+            "</div>"
+          ) : "") +
+        "</div>" +
+        "<div style='display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:11px 18px;background:#f6efe2;border-top:2px solid #23201a'>" +
+          (permCopie
+            ? "<div style='display:flex;gap:8px;flex-wrap:wrap'>" +
+                "<button type='button' id='sti-tb-el-copy' style='border:2px solid #23201a;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:900;background:#e3f6e8;color:#177245;cursor:pointer;box-shadow:2px 2px 0 #23201a'>📋 Copier le corrigé</button>" +
+                "<button type='button' id='sti-tb-el-sandbox' style='border:2px solid #23201a;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:900;background:#e0f2fe;color:#0369a1;cursor:pointer;box-shadow:2px 2px 0 #23201a'>💻 Tester dans le Bac à sable</button>" +
+              "</div>"
+            : "<span style='font-size:11.5px;font-weight:900;color:#5a5244'>👀 Lecture &amp; analyse : étudiez la syntaxe au tableau puis saisissez-la dans votre exercice.</span>"
+          ) +
+          "<button type='button' id='sti-tb-el-min2' style='border:2px solid #23201a;border-radius:999px;padding:6px 15px;font-size:12px;font-weight:900;background:#23201a;color:#fff;cursor:pointer'>🗕 Garder en vignette en bas</button>" +
+        "</div>" +
+      "</div>";
+
+    (document.body || document.documentElement).appendChild(fond);
+
+    function reduireEnVignette() {
+      fond.remove();
+      var pill = document.createElement("button");
+      pill.type = "button";
+      pill.id = "sti-pill-tb-eleve";
+      pill.className = "sti-no-print";
+      pill.style.cssText = "position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483645;border:2.5px solid #23201a;border-radius:999px;padding:9px 16px;background:linear-gradient(125deg,#0284c7,#0369a1);color:#fff;font:900 12.5px/1 system-ui,'Segoe UI',sans-serif;cursor:pointer;box-shadow:3px 3px 0 #23201a,0 8px 20px rgba(0,0,0,.28);display:inline-flex;align-items:center;gap:7px;";
+      pill.innerHTML = "<span>📺 Tableau Blanc du Prof : " + esc((tb.titre || tb.lang || "Corrigé").slice(0, 32)) + "</span><span style='background:#ffd54f;color:#23201a;padding:2px 7px;border-radius:999px;font-size:10.5px'>Ouvrir</span>";
+      pill.addEventListener("click", function () {
+        pill.remove();
+        afficherTableauBlancLiveEleve(tb);
+      });
+      (document.body || document.documentElement).appendChild(pill);
+    }
+
+    var btnMin1 = fond.querySelector("#sti-tb-el-min");
+    var btnMin2 = fond.querySelector("#sti-tb-el-min2");
+    var btnClose = fond.querySelector("#sti-tb-el-close");
+    if (btnMin1) btnMin1.addEventListener("click", reduireEnVignette);
+    if (btnMin2) btnMin2.addEventListener("click", reduireEnVignette);
+    if (btnClose) {
+      btnClose.addEventListener("click", function () {
+        dernierTbLiveIdFerme = tb.id || "";
+        reduireEnVignette();
+      });
+    }
+
+    var btnCopy = fond.querySelector("#sti-tb-el-copy");
+    if (btnCopy) {
+      btnCopy.addEventListener("click", function () {
+        var codeBrut = String(tb.code || "");
+        try { window.__stiDernierCopieAutorise = codeBrut.trim(); } catch (e) {}
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(codeBrut).then(function () {
+            btnCopy.textContent = "✅ Corrigé copié !";
+            setTimeout(function () { btnCopy.textContent = "📋 Copier le corrigé"; }, 2000);
+          });
+        }
+      });
+    }
+
+    var btnSb = fond.querySelector("#sti-tb-el-sandbox");
+    if (btnSb) {
+      btnSb.addEventListener("click", function () {
+        reduireEnVignette();
+        if (typeof window.ouvrirSandboxSTI === "function") {
+          window.ouvrirSandboxSTI();
+          setTimeout(function () {
+            var taH = document.getElementById("sti-sb-html");
+            var taJ = document.getElementById("sti-sb-js");
+            if (tb.lang === "JavaScript" && taJ) {
+              taJ.value = tb.code || "";
+            } else if (taH) {
+              taH.value = tb.code || "";
+            }
+          }, 120);
+        }
+      });
+    }
+  }
+
   /* ---------- réception des messages groupés + réponses élèves + signaux d'expulsion/Gold/Contrôle ---------- */
   function ecouterMessagesClasse(uid, maClasse) {
     var demarreA = Date.now();
@@ -2651,6 +2807,7 @@
           var derniereAnnonce = null;
           var dernierCtrl = null;
           var dernierFlash = null;
+          var dernierTbLive = null;
           var dernierSecCfg = null;
           var dernierSessUnique = null;
           for (var i = 0; i < lignes.length; i++) {
@@ -2665,6 +2822,8 @@
                   dernierCtrl = a;
                 } else if (a && a.type === "flash_q") {
                   dernierFlash = a;
+                } else if (a && a.type === "tableau_blanc") {
+                  if (!dernierTbLive || Number(a.ts || 0) >= Number(dernierTbLive.ts || 0)) dernierTbLive = a;
                 } else if (a && a.type === "sec_config") {
                   if (!dernierSecCfg || Number(a.ts || 0) >= Number(dernierSecCfg.ts || 0)) dernierSecCfg = a;
                 } else if (a && a.type === "session_unique" && a.uid === uid) {
@@ -2680,6 +2839,7 @@
           if (derniereAnnonce) afficherAnnonce(derniereAnnonce);
           if (dernierCtrl) afficherControleChrono(dernierCtrl);
           if (dernierFlash) afficherQuestionFlashLive(dernierFlash, uid);
+          if (dernierTbLive) afficherTableauBlancLiveEleve(dernierTbLive);
           if (dernierSecCfg) appliquerConfigSecurite(dernierSecCfg);
           if (dernierSessUnique) verifierSessionUnique(dernierSessUnique);
         })
@@ -2702,6 +2862,9 @@
         })
         .on("broadcast", { event: "flash_q" }, function (p) {
           if (p && p.payload) afficherQuestionFlashLive(p.payload, uid);
+        })
+        .on("broadcast", { event: "tableau_blanc" }, function (p) {
+          if (p && p.payload) afficherTableauBlancLiveEleve(p.payload);
         })
         .on("broadcast", { event: "sec_config" }, function (p) {
           if (p && p.payload) appliquerConfigSecurite(p.payload);
@@ -3295,8 +3458,8 @@
       var signatureExpliciteIA = sourceIA !== "Anti-ChatGPT / Gemini / Claude";
       var nbLignes = propre.split(/\r?\n/).length;
 
-      /* Autoriser un petit mot/identifiant (< 60 car. sur 1–2 lignes sans signature IA) ou ce que l'élève vient lui-même de copier dans son éditeur */
-      if (propre === dernierCopieInterne && !signatureExpliciteIA) return;
+      /* Autoriser un petit mot/identifiant (< 60 car. sur 1–2 lignes sans signature IA), ce que l'élève vient lui-même de copier dans son éditeur, ou le corrigé autorisé du Tableau Blanc du Prof */
+      if ((propre === dernierCopieInterne || (window.__stiDernierCopieAutorise && propre === window.__stiDernierCopieAutorise)) && !signatureExpliciteIA) return;
       if (!signatureExpliciteIA && propre.length < 60 && nbLignes <= 2) return;
 
       e.preventDefault();
@@ -4630,6 +4793,135 @@
     });
   }
 
+  /* ---------- 📺 Lanceur « Tableau Blanc Live » disponible sur toutes les pages du site (pour l'administrateur) ---------- */
+  function ouvrirTableauBlancAdminSurSite() {
+    if (!estSessionAdminVerifiee()) return;
+    var ex = document.getElementById("sti-modal-tb-prof-site");
+    if (ex) { ex.remove(); return; }
+
+    var selTxt = "";
+    try {
+      selTxt = window.getSelection ? String(window.getSelection() || "").trim() : "";
+    } catch (e) {}
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-tb-prof-site";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(20,17,12,.68);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px;font:700 13.5px/1.45 system-ui,'Segoe UI',sans-serif;";
+
+    fond.innerHTML =
+      "<div style='background:#fffdf7;color:#23201a;color-scheme:light;border:3px solid #23201a;border-radius:20px;max-width:660px;width:100%;max-height:92dvh;overflow-y:auto;padding:18px 20px;box-shadow:7px 7px 0 #0284c7,0 20px 44px rgba(0,0,0,.38)'>" +
+        "<div style='display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px'>" +
+          "<h3 style='margin:0;font-size:16.5px;font-weight:900;color:#23201a'>📺 Tableau Blanc Live STI — Projeter un code aux élèves</h3>" +
+          "<button type='button' id='sti-site-tb-close' style='border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:32px;height:30px;font-weight:900;cursor:pointer'>✕</button>" +
+        "</div>" +
+        "<div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px'>" +
+          "<div>" +
+            "<label style='font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px'>🏫 Classe cible :</label>" +
+            "<select id='sti-site-tb-cible' style='width:100%;border:2px solid #23201a;border-radius:10px;padding:7px 10px;font-weight:800;font-size:13px;background:#fff;color:#23201a'>" +
+              "<option value='*'>🌐 Toutes les classes</option>" +
+              "<option value='3SI'>🏫 Toutes les 3e SI</option>" +
+              "<option value='4SI'>🏫 Toutes les 4e SI</option>" +
+              "<option value='3SI1'>🏫 3SI1</option>" +
+              "<option value='3SI2'>🏫 3SI2</option>" +
+              "<option value='3SI3'>🏫 3SI3</option>" +
+              "<option value='4SI1'>🏫 4SI1</option>" +
+              "<option value='4SI2'>🏫 4SI2</option>" +
+              "<option value='4SI3'>🏫 4SI3</option>" +
+              "<option value='4SI4'>🏫 4SI4</option>" +
+              "<option value='4SI5'>🏫 4SI5</option>" +
+            "</select>" +
+          "</div>" +
+          "<div>" +
+            "<label style='font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px'>💻 Langage / Module :</label>" +
+            "<select id='sti-site-tb-lang' style='width:100%;border:2px solid #23201a;border-radius:10px;padding:7px 10px;font-weight:800;font-size:13px;background:#fff;color:#23201a'>" +
+              "<option value='SQL'>🗄️ SQL</option>" +
+              "<option value='PHP / MySQLi'>🐘 PHP &amp; MySQLi</option>" +
+              "<option value='JavaScript'>⚡ JavaScript</option>" +
+              "<option value='HTML5 / CSS3'>🎨 HTML5 &amp; CSS3</option>" +
+              "<option value='Consigne / Algo'>📝 Algorithme / Consigne</option>" +
+            "</select>" +
+          "</div>" +
+        "</div>" +
+        "<label style='font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px'>📌 Titre du corrigé :</label>" +
+        "<input type='text' id='sti-site-tb-titre' placeholder='Ex : Corrigé de la question / Syntaxe à retenir' style='width:100%;border:2px solid #23201a;border-radius:10px;padding:7px 10px;font-weight:800;font-size:13px;background:#fff;color:#23201a;margin-bottom:8px;box-sizing:border-box' />" +
+        "<label style='font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px'>⌨️ Code ou corrigé à projeter :</label>" +
+        "<textarea id='sti-site-tb-code' rows='8' spellcheck='false' placeholder='Collez ou saisissez ici le code à afficher sur tous les écrans des élèves…' style='width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;background:#141a24;color:#f8fafc;border:2px solid #23201a;border-radius:12px;padding:10px;margin-bottom:8px;box-sizing:border-box'></textarea>" +
+        "<label style='font-size:11.5px;font-weight:800;color:#5a5244;display:block;margin-bottom:3px'>💡 Remarque / Point clé du professeur :</label>" +
+        "<input type='text' id='sti-site-tb-note' placeholder='Ex : Vérifiez bien les guillemets et le point-virgule final !' style='width:100%;border:2px solid #23201a;border-radius:10px;padding:7px 10px;font-weight:800;font-size:12.5px;background:#fff;color:#23201a;margin-bottom:8px;box-sizing:border-box' />" +
+        "<label style='display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:800;background:#f3ead9;border:1.5px solid #23201a;border-radius:10px;padding:7px 10px;margin-bottom:12px'>" +
+          "<input type='checkbox' id='sti-site-tb-copie' style='width:16px;height:16px;margin:0' />" +
+          "<span>📋 Autoriser les élèves à copier ce corrigé / l'ouvrir dans le Bac à sable</span>" +
+        "</label>" +
+        "<div style='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap'>" +
+          "<button type='button' id='sti-site-tb-stop' style='border:2px solid #23201a;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:900;background:#fde2e6;color:#c0392b;cursor:pointer'>⏹️ Fermer chez les élèves</button>" +
+          "<button type='button' id='sti-site-tb-send' style='border:2px solid #23201a;border-radius:999px;padding:8px 18px;font-size:13px;font-weight:900;background:linear-gradient(125deg,#0284c7,#0369a1);color:#fff;cursor:pointer;box-shadow:2px 2px 0 #23201a'>📺 Projeter en direct</button>" +
+        "</div>" +
+      "</div>";
+
+    (document.body || document.documentElement).appendChild(fond);
+
+    var inpCode = fond.querySelector("#sti-site-tb-code");
+    var inpTitre = fond.querySelector("#sti-site-tb-titre");
+    var selLang = fond.querySelector("#sti-site-tb-lang");
+    if (selTxt && inpCode) {
+      inpCode.value = selTxt;
+      if (inpTitre) inpTitre.value = "Extrait projeté depuis " + (document.title || "le cours STI");
+    }
+    var pLow = String(location.pathname || "").toLowerCase();
+    if (selLang) {
+      if (pLow.indexOf("php") !== -1) selLang.value = "PHP / MySQLi";
+      else if (pLow.indexOf("js") !== -1 || pLow.indexOf("javascript") !== -1) selLang.value = "JavaScript";
+      else if (pLow.indexOf("html") !== -1 || pLow.indexOf("css") !== -1) selLang.value = "HTML5 / CSS3";
+      else if (pLow.indexOf("sql") !== -1 || pLow.indexOf("bd") !== -1) selLang.value = "SQL";
+    }
+
+    fond.querySelector("#sti-site-tb-close").addEventListener("click", function () { fond.remove(); });
+    fond.addEventListener("click", function (e) { if (e.target === fond) fond.remove(); });
+
+    function envoyerTbDepuisSite(actif) {
+      var codeVal = inpCode ? inpCode.value : "";
+      if (actif && !codeVal.trim()) {
+        afficherToastSynchro("⚠️ Saisissez ou sélectionnez d'abord un code à projeter.");
+        return;
+      }
+      var payload = {
+        type: "tableau_blanc",
+        id: "tb_" + Date.now(),
+        actif: Boolean(actif),
+        cible: fond.querySelector("#sti-site-tb-cible").value || "*",
+        lang: selLang ? selLang.value : "SQL",
+        titre: (inpTitre && inpTitre.value.trim()) ? inpTitre.value.trim() : "Corrigé & Explication en direct — M. Aymen Essouyah",
+        code: codeVal,
+        note: (fond.querySelector("#sti-site-tb-note").value || "").trim(),
+        autoriserCopie: Boolean(fond.querySelector("#sti-site-tb-copie").checked),
+        ts: Date.now()
+      };
+      try { localStorage.setItem("sti-tb-live-admin", JSON.stringify(payload)); } catch (e) {}
+      if (currentUid) {
+        sb.from("acces").insert({
+          user_id: currentUid,
+          page: "TABLEAU_BLANC",
+          lieu: JSON.stringify(payload),
+          duree_sec: 0
+        }).then(function () {});
+      }
+      try {
+        sb.channel("sti-diffusion").send({ type: "broadcast", event: "tableau_blanc", payload: payload });
+      } catch (e) {}
+      fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }).catch(function () {});
+
+      afficherToastSynchro(actif ? "📺 Code projeté en direct sur les écrans des élèves !" : "⏹️ Tableau Blanc refermé chez les élèves.");
+      if (!actif) fond.remove();
+    }
+
+    fond.querySelector("#sti-site-tb-send").addEventListener("click", function () { envoyerTbDepuisSite(true); });
+    fond.querySelector("#sti-site-tb-stop").addEventListener("click", function () { envoyerTbDepuisSite(false); });
+  }
+
   /* ---------- badge ADMIN visible sur tout le site (droite, au-dessus de ⚙️) + bouton Messenger + bouton Question Flash + compteur de demandes ---------- */
   function badgeAdmin() {
     if (estDansIframeModale()) return;
@@ -4684,9 +4976,21 @@
       ouvrirFlashAdminSurSite();
     });
 
+    var btnTbAdm = document.createElement("button");
+    btnTbAdm.type = "button";
+    btnTbAdm.textContent = "📺";
+    btnTbAdm.title = "📺 Tableau Blanc Live : projeter un code ou corrigé en direct sur les écrans des élèves (pré-remplit la sélection)";
+    btnTbAdm.style.cssText = "background:linear-gradient(120deg,#e0f2fe,#0284c7);color:#fff;border:2px solid #23201a;border-radius:999px;padding:8px 11px;font:900 15px/1 system-ui,'Segoe UI',sans-serif;cursor:pointer;box-shadow:3px 3px 0 #23201a;";
+    btnTbAdm.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      ouvrirTableauBlancAdminSurSite();
+    });
+
     cont.appendChild(b);
     cont.appendChild(btnMsnAdm);
     cont.appendChild(btnFlashAdm);
+    cont.appendChild(btnTbAdm);
     (document.body || document.documentElement).appendChild(cont);
 
     installerBoutonMessengerGlobal(true, currentUid || "admin", "Admin");
@@ -5995,7 +6299,7 @@
   };
 
   /* =====================================================================
-     🐞 MODE « CHASSE AUX ERREURS (DÉBOGAGE BAC STI) » (v111)
+     🐞 MODE « CHASSE AUX ERREURS (DÉBOGAGE BAC STI) » (v112)
      10 défis officiels × 3 erreurs classiques du Bac = 30 pièges à corriger
      ===================================================================== */
   var STI_DEBUG_DEFIS = window.STI_DEBUG_DEFIS = [
