@@ -1375,6 +1375,16 @@
           <div class="modal-header-actions">
             <button
               class="modal-expand"
+              id="modalSplitCodeBtn"
+              onclick="if(window.ouvrirEcranPartageEnonceCodeSTI){closePdfModal();window.ouvrirEcranPartageEnonceCodeSTI(modalUrl);}"
+              aria-label="Ouvrir en écran partagé (Énoncé à gauche + Éditeur de code à droite)"
+              title="🌗 Écran Partagé : lire cet énoncé à gauche et coder à droite"
+              style="width:auto;padding:0 10px;font-size:12px;font-weight:900;background:#0f766e;color:#fff;border-color:#0f766e"
+            >
+              🌗 Écran Partagé + Code
+            </button>
+            <button
+              class="modal-expand"
               id="modalOpenTabBtn"
               onclick="openModalInNewTab()"
               aria-label="Ouvrir dans un nouvel onglet avec un bouton de retour aux exercices"
@@ -1821,11 +1831,11 @@
     </script>
   <script id="stix-top">(function(){document.addEventListener("click",function(e){var a=e.target&&e.target.closest?e.target.closest('a[href="#top"]'):null;if(!a)return;e.preventDefault();var de=document.documentElement,pr=de.style.scrollBehavior;de.style.scrollBehavior="auto";window.scrollTo(0,0);if(pr)de.style.scrollBehavior=pr;else de.style.removeProperty("scroll-behavior");if(location.hash==="#top"&&history.replaceState)history.replaceState(null,"",location.pathname+location.search);});})();</script>
   <!-- 🔒 Protection du contenu STI -->
-<link rel="stylesheet" href="../assets/css/protection.css?v=114" />
-<script src="../assets/js/protection.js?v=114" defer></script>
+<link rel="stylesheet" href="../assets/css/protection.css?v=115" />
+<script src="../assets/js/protection.js?v=115" defer></script>
 <!-- /Protection -->
 <script src="../assets/js/supabase-umd.js"></script>
-<script src="../assets/js/config.js?v=114"></script>
-<script src="../assets/js/acces.js?v=114"></script>
+<script src="../assets/js/config.js?v=115"></script>
+<script src="../assets/js/acces.js?v=115"></script>
 </body>
 </html>

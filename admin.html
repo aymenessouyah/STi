@@ -1181,10 +1181,10 @@
           <span id="titre-tb-admin" style="color:#177245;transition:color .25s ease" title="🟢 En ligne">Tableau de bord STI V2.0</span>
           <span class="badge-temoin-examen" id="badge-temoin-examen" role="button" tabindex="0" title="🟢 Accès aux cours ouvert — Cliquer pour ouvrir le Centre de Sécurité / Mode Examen">🟢 Accès ouvert</span>
           <span class="badge-admin-gold">👑 Admin Gold</span>
-          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v114</span>
-          <span class="badge-supabase" id="badge-supabase-quota" title="Espace disponible dans la base Supabase (Quota 500 Mo) — cliquer pour voir le détail">🗄️ Supabase : <b id="sb-pct-restant">99,8 %</b> restant (<span id="sb-qte-restante">499,2 Mo / 500 Mo</span>)<span class="jauge-sb-mini" aria-hidden="true"><i id="sb-jauge-barre" style="width:99.8%"></i></span></span>
+          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v115</span>
+          <span class="badge-supabase" id="badge-supabase-quota" title="Espace disponible dans la base Supabase (Quota 500 Mo) — cliquer pour ouvrir l'Analyseur &amp; Nettoyeur Intelligent">🗄️ Supabase : <b id="sb-pct-restant">99,8 %</b> restant (<span id="sb-qte-restante">499,2 Mo / 500 Mo</span>)<span class="jauge-sb-mini" aria-hidden="true"><i id="sb-jauge-barre" style="width:99.8%"></i></span></span>
         </h1>
-        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v114)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
+        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v115)</strong> · <strong id="sous-supabase-quota" style="color:#177245;cursor:pointer;text-decoration:underline dotted" title="Cliquer pour ouvrir l'Analyseur &amp; Nettoyeur Intelligent Supabase">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
       </div>
     </div>
     <div class="barre-util">
@@ -1196,6 +1196,9 @@
       <button class="btn-util" id="btn-tb-live-top" type="button" title="Tableau Blanc Live : projeter un extrait de code ou un corrigé en direct sur les écrans des élèves" style="background:#e0f2fe;border-color:#0284c7;color:#0369a1">📺 <span class="lbl-pc">Tableau Blanc</span><span class="lbl-mob">Code Live</span></button>
       <button class="btn-util" id="btn-coffre-top" type="button" title="Coffre de Partage Rapide : distribuer un fichier (.zip, .sql, .html, .php, .pdf) à une classe" style="background:#fef3c7;border-color:#b45309;color:#92400e">🗂️ <span class="lbl-pc">Coffre TP</span><span class="lbl-mob">Fichiers</span> <span id="badge-coffre-top" style="display:none;background:#b45309;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util" id="btn-copies-top" type="button" title="Boîte de Réception &amp; Notation des TP et Copies rendus par les élèves (/20)" style="background:#dcfce7;border-color:#15803d;color:#166534">📥 <span class="lbl-pc">Copies TP</span><span class="lbl-mob">Copies</span> <span id="badge-copies-top" style="display:none;background:#15803d;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
+      <button class="btn-util mob-extra" id="btn-grille-devoirs-top" type="button" title="Calculatrice de Barème &amp; Grille de Correction Rapide pour Devoirs de Contrôle et Synthèse (Export CSV Eduserv)" style="background:#e0e7ff;border-color:#3730a3;color:#312e81">🧮 <span class="lbl-pc">Grille Devoirs</span><span class="lbl-mob">Devoirs</span></button>
+      <button class="btn-util mob-extra" id="btn-badges-labo-top" type="button" title="Générer et imprimer les Badges de Connexion Rapide au Laboratoire (Code 6 caractères par élève)" style="background:#fef3c7;border-color:#d97706;color:#92400e">🪪 <span class="lbl-pc">Badges Labo</span><span class="lbl-mob">Badges</span></button>
+      <button class="btn-util mob-extra" id="btn-force-update-eleves" type="button" title="Docteur STI : Forcer tous les écrans d'élèves connectés à vider leur vieux cache et recharger immédiatement la dernière version" style="background:#f0fdf4;border-color:#15803d;color:#166534">🩺 <span class="lbl-pc">Forcer Maj Élèves</span><span class="lbl-mob">Maj Élèves</span></button>
       <button class="btn-util mob-extra" id="btn-mains-top" type="button" title="File d'attente des élèves ayant levé la main pour demander de l'aide en TP" style="background:#ede9fe;border-color:#6d28d9;color:#6d28d9">🙋‍♂️ <span class="lbl-pc">Mains levées</span><span class="lbl-mob">Aide</span> <span id="badge-mains-top" style="display:none;background:#6d28d9;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util mob-extra" id="btn-palmares-top" type="button" title="Palmarès &amp; Podium par classe (Quiz, Questions Flash et Assiduité)" style="background:linear-gradient(120deg,#fff3b0,#ffd54f);border-color:#23201a;color:#6d4c00">🏆 <span class="lbl-pc">Palmarès</span><span class="lbl-mob">Top 3</span></button>
       <button class="btn-util" id="btn-appel-top" type="button" title="Feuille d'appel &amp; présence automatique du jour par classe (Présents vs Absents)" style="background:#e3f6e8;border-color:#177245;color:#177245">📋 <span class="lbl-pc">Appel / Présence</span><span class="lbl-mob">Appel</span></button>
@@ -1256,6 +1259,22 @@
       <span class="ca-corps">
         <span class="ca-titre">Copies &amp; TP rendus</span>
         <span class="ca-desc">Tester le code des élèves &amp; noter sur /20</span>
+      </span>
+    </button>
+
+    <button class="carte-action" id="btn-grille-devoirs-card" type="button">
+      <span class="ca-ico" style="background:linear-gradient(135deg,#4f46e5,#3730a3);color:#fff">🧮</span>
+      <span class="ca-corps">
+        <span class="ca-titre">Grille Devoirs (DC / DS)</span>
+        <span class="ca-desc">Calculatrice de barème par partie &amp; CSV Eduserv</span>
+      </span>
+    </button>
+
+    <button class="carte-action" id="btn-badges-labo-card" type="button">
+      <span class="ca-ico" style="background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff">🪪</span>
+      <span class="ca-corps">
+        <span class="ca-titre">Badges Labo (Classe)</span>
+        <span class="ca-desc">Codes d'accès rapide 6 caractères au labo</span>
       </span>
     </button>
 
@@ -2324,6 +2343,123 @@
     </div>
   </div>
 
+  <!-- Boîte modale : 🧮 3. Calculatrice de Barème & Grille de Correction Rapide pour Devoirs Contrôle / Synthèse -->
+  <div class="modal-fond" id="modal-grille-devoirs" role="dialog" aria-modal="true">
+    <div class="modal-boite" style="max-width:960px;width:min(960px,96vw);max-height:92dvh;overflow-y:auto;padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:17px">🧮 Calculatrice de Barème &amp; Grille de Correction Rapide (Devoirs Contrôle / Synthèse)</h3>
+        <button type="button" id="btn-fermer-grille-x" style="border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:34px;height:32px;font-weight:900;cursor:pointer">✕</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;background:#f9f1e3;border:2px solid #23201a;border-radius:14px;padding:11px 14px;margin-bottom:12px">
+        <div>
+          <label style="font-size:11.5px;font-weight:900;display:block;margin-bottom:3px">🏫 Classe à corriger :</label>
+          <select id="grille-sel-classe" style="margin-bottom:0"></select>
+        </div>
+        <div>
+          <label style="font-size:11.5px;font-weight:900;display:block;margin-bottom:3px">📝 Type d'épreuve officielle :</label>
+          <select id="grille-sel-epreuve" style="margin-bottom:0">
+            <option value="Devoir de Contrôle N°1">Devoir de Contrôle N°1 (DC1)</option>
+            <option value="Devoir de Contrôle N°2">Devoir de Contrôle N°2 (DC2)</option>
+            <option value="Devoir de Synthèse N°1">Devoir de Synthèse N°1 (DS1)</option>
+            <option value="Devoir de Synthèse N°2">Devoir de Synthèse N°2 (DS2)</option>
+            <option value="Épreuve Pratique STI">Épreuve Pratique STI (TP Noté)</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:center;font-size:12px;font-weight:900;color:#1e3a8a">
+          <span id="grille-stats-resume">Moyenne classe : — / 20 · Min : — · Max : —</span>
+          <small style="color:#6b6152;font-weight:700">Saisissez les sous-notes par partie : le total /20 se calcule automatiquement.</small>
+        </div>
+      </div>
+
+      <div class="fiche-table-wrap" style="max-height:390px;overflow-y:auto;margin-bottom:12px">
+        <table class="fiche-mini-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Élève (Nom &amp; Prénom)</th>
+              <th>P1 : HTML/CSS (/6)</th>
+              <th>P2 : JS (/6)</th>
+              <th>P3 : SQL (/4)</th>
+              <th>P4 : PHP (/4)</th>
+              <th>Total (/20)</th>
+              <th>Appréciation</th>
+            </tr>
+          </thead>
+          <tbody id="tb-grille-devoirs"></tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:2px solid #e7dcc8;padding-top:10px">
+        <button type="button" id="btn-grille-imprimer-pv" style="border:2px solid #23201a;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:900;background:#e0f2fe;color:#0369a1;cursor:pointer">🖨️ Imprimer PV de notes A4</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" id="btn-grille-export-csv" style="border:2px solid #23201a;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:900;background:#e3f6e8;color:#177245;cursor:pointer">📥 Exporter CSV (Eduserv / Excel)</button>
+          <button type="button" id="btn-grille-publier" style="border:2px solid #23201a;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:900;background:linear-gradient(125deg,#4f46e5,#3730a3);color:#fff;cursor:pointer;box-shadow:2px 2px 0 #23201a">💾 Enregistrer &amp; Publier aux élèves</button>
+          <button type="button" id="btn-fermer-grille" style="border:2px solid #23201a;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;background:#fff;cursor:pointer">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boîte modale : 🪪 1. Générateur & Planche A4 des Badges d'Accès Rapide au Laboratoire -->
+  <div class="modal-fond" id="modal-badges-labo" role="dialog" aria-modal="true">
+    <div class="modal-boite" style="max-width:860px;width:min(860px,96vw);max-height:92dvh;overflow-y:auto;padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap">
+        <h3 style="margin:0;font-size:17px">🪪 Badges d'Accès Rapide au Laboratoire (Code 6 caractères sans mot de passe)</h3>
+        <button type="button" id="btn-fermer-badges-x" style="border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:34px;height:32px;font-weight:900;cursor:pointer">✕</button>
+      </div>
+
+      <p style="font-size:12.5px;color:#5a5244;margin:0 0 10px;font-weight:700">
+        Chaque élève actif dispose d'un <b>Code Badge Labo unique à 6 caractères</b> (ex. <code>L8K4P2</code>). Sur le portail (<code>portail.html</code>), il clique sur <b>« 🪪 Connexion rapide par Code Badge »</b> et entre en 2 secondes sans taper d'e-mail ni de mot de passe.
+      </p>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <label style="font-size:12px;font-weight:900">🏫 Classe :</label>
+          <select id="badges-sel-classe" style="margin-bottom:0;width:auto;min-width:190px">
+            <option value="*">🌐 Toutes les classes</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" id="btn-badges-sync" style="border:2px solid #23201a;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:900;background:#e3f6e8;color:#177245;cursor:pointer">🔄 Activer / Synchroniser les codes Labo</button>
+          <button type="button" id="btn-badges-imprimer" style="border:2px solid #23201a;border-radius:999px;padding:6px 15px;font-size:12px;font-weight:900;background:linear-gradient(125deg,#d97706,#b45309);color:#fff;cursor:pointer;box-shadow:2px 2px 0 #23201a">🖨️ Imprimer la planche de Badges A4</button>
+        </div>
+      </div>
+
+      <div id="grille-badges-labo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;max-height:380px;overflow-y:auto;padding:4px 2px"></div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:12px;border-top:2px solid #e7dcc8;padding-top:10px">
+        <button type="button" id="btn-fermer-badges" style="border:2px solid #23201a;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:800;background:#fff;cursor:pointer">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boîte modale : 🧹 5. Analyseur & Nettoyeur Intelligent du Quota Supabase (500 Mo) -->
+  <div class="modal-fond" id="modal-quota-supabase" role="dialog" aria-modal="true">
+    <div class="modal-boite" style="max-width:740px;width:min(740px,96vw);max-height:92dvh;overflow-y:auto;padding:18px 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px">
+        <h3 style="margin:0;font-size:17px">🗄️ Analyseur &amp; Nettoyeur Intelligent du Quota Supabase (500 Mo)</h3>
+        <button type="button" id="btn-fermer-quota-x" style="border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:34px;height:32px;font-weight:900;cursor:pointer">✕</button>
+      </div>
+
+      <div style="background:#f0fdf4;border:2px solid #177245;border-radius:14px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;font-weight:800;color:#166534">
+        🔒 <b>Garantie de sécurité :</b> Aucun nettoyage ci-dessous ne touche aux <b>profils des élèves</b> ni à leurs <b>notes de Quiz / Devoirs</b>. Seuls les fichiers lourds ou journaux anciens sont libérés.
+      </div>
+
+      <div id="contenu-repartition-quota" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-bottom:12px">
+        <button type="button" id="btn-purge-lourds-30j" style="border:2px solid #23201a;border-radius:12px;padding:9px 12px;font-size:12px;font-weight:900;background:#fef3c7;color:#92400e;cursor:pointer;box-shadow:2px 2px 0 #23201a">🧹 1. Purger fichiers &amp; pièces jointes &gt; 30 jours</button>
+        <button type="button" id="btn-purge-coffre-pj" style="border:2px solid #23201a;border-radius:12px;padding:9px 12px;font-size:12px;font-weight:900;background:#fde2e6;color:#c0392b;cursor:pointer;box-shadow:2px 2px 0 #23201a">🗑️ 2. Purger toutes les pièces jointes &amp; Coffre TP</button>
+        <button type="button" id="btn-purge-journaux-tech" style="border:2px solid #23201a;border-radius:12px;padding:9px 12px;font-size:12px;font-weight:900;background:#e0f2fe;color:#0369a1;cursor:pointer;box-shadow:2px 2px 0 #23201a">🛡️ 3. Purger journaux techniques &amp; alertes</button>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;border-top:2px solid #e7dcc8;padding-top:10px">
+        <button type="button" id="btn-fermer-quota" style="border:2px solid #23201a;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:800;background:#fff;cursor:pointer">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Boîte de configuration des notifications de nouvelles demandes -->
   <div class="modal-fond" id="modal-notif" role="dialog" aria-modal="true">
     <div class="modal-boite">
@@ -2900,7 +3036,7 @@
 </script>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=114"></script>
-<script src="assets/js/admin.js?v=114"></script>
+<script src="assets/js/config.js?v=115"></script>
+<script src="assets/js/admin.js?v=115"></script>
 </body>
 </html>

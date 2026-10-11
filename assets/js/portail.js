@@ -10,6 +10,7 @@
     var hInit = location.hash.replace("#", "");
     if (hInit === "deconnecte" || hInit === "exclu" || hInit === "refuse" || hInit === "securite" || hInit === "partage") {
       localStorage.removeItem("sti-labo3-permanent");
+      localStorage.removeItem("sti-labo-badge-sess");
       localStorage.removeItem("sti-session-cache");
       localStorage.removeItem("sti-offline");
       localStorage.removeItem("sti-gold");
@@ -819,4 +820,133 @@
       msg("📧 Lien de réinitialisation envoyé (vérifiez votre boîte mail).", "ok");
     });
   });
+
+  /* ---------- 📱 1. Connexion Rapide par Code Badge Labo (6 caractères) ---------- */
+  var btnToggleBadge = document.getElementById("btn-toggle-badge-labo");
+  var zoneBadgeLabo = document.getElementById("zone-badge-labo");
+  var inpCodeBadge = document.getElementById("inp-code-badge-labo");
+  var btnValiderBadge = document.getElementById("btn-valider-badge-labo");
+
+  if (btnToggleBadge && zoneBadgeLabo) {
+    btnToggleBadge.addEventListener("click", function () {
+      zoneBadgeLabo.hidden = !zoneBadgeLabo.hidden;
+      if (!zoneBadgeLabo.hidden && inpCodeBadge) inpCodeBadge.focus();
+    });
+  }
+
+  function connecterAvecProfilBadge(pBadge) {
+    if (!pBadge || !pBadge.id) return;
+    var adminMailStrict = (cfg.ADMIN || "aymenessouyah@gmail.com").trim().toLowerCase();
+    if (String(pBadge.email || "").trim().toLowerCase() === adminMailStrict) {
+      msg("⛔ Le compte administrateur exige le mot de passe complet.", "err");
+      return;
+    }
+    var sessObj = {
+      id: pBadge.id,
+      email: pBadge.email || "",
+      phone: pBadge.phone || "",
+      nom: pBadge.nom || "",
+      prenom: pBadge.prenom || "",
+      classe: pBadge.classe || "—",
+      lycee: pBadge.lycee || "Lycée",
+      statut: "actif",
+      gold: Boolean(pBadge.gold),
+      isAdmin: false,
+      badgeLabo: true,
+      ts: Date.now()
+    };
+    try {
+      localStorage.removeItem("sti-admin-gold");
+      if (sessObj.gold) localStorage.setItem("sti-gold", "1");
+      else localStorage.removeItem("sti-gold");
+      localStorage.setItem("sti-offline", String(Date.now()));
+      localStorage.setItem("sti-session-cache", JSON.stringify(sessObj));
+      localStorage.setItem("sti-labo-badge-sess", JSON.stringify(sessObj));
+    } catch (e) {}
+    msg("✅ Badge Labo reconnu (" + ((sessObj.prenom || "") + " " + (sessObj.nom || "")).trim() + " · " + sessObj.classe + ") ! Ouverture…", "ok");
+    setTimeout(function () {
+      location.replace(cfg.RACINE + "index.html");
+    }, 350);
+  }
+
+  function validerCodeBadgeLabo() {
+    if (!inpCodeBadge) return;
+    var code = String(inpCodeBadge.value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (code.length < 5) {
+      msg("⚠️ Saisissez les 6 caractères de votre Code Badge Labo (ex: L8K4P2).", "err");
+      inpCodeBadge.focus();
+      return;
+    }
+    /* Cas spécial elevelabo3 : code universel LABO03 ou ELEVELABO3 */
+    if (code === "LABO03" || code === "LABO3" || code === "ELEVELABO3") {
+      var objPerm = {
+        id: "labo3-local",
+        email: "elevelabo3@sti.tn",
+        nom: "Poste",
+        prenom: "Labo 3",
+        classe: "elevelabo3",
+        lycee: "Lycée",
+        statut: "actif",
+        gold: true,
+        permanent: true,
+        isAdmin: false,
+        ts: Date.now()
+      };
+      try {
+        localStorage.removeItem("sti-admin-gold");
+        localStorage.setItem("sti-gold", "1");
+        localStorage.setItem("sti-offline", String(Date.now()));
+        localStorage.setItem("sti-session-cache", JSON.stringify(objPerm));
+        localStorage.setItem("sti-labo3-permanent", JSON.stringify(objPerm));
+      } catch (e) {}
+      location.replace(cfg.RACINE + "index.html");
+      return;
+    }
+    var cfgLoc = null;
+    try { cfgLoc = JSON.parse(localStorage.getItem("sti-cfg-ecoles") || "null"); } catch (e) {}
+    if (cfgLoc && cfgLoc.codesLaboMap && cfgLoc.codesLaboMap[code]) {
+      connecterAvecProfilBadge(cfgLoc.codesLaboMap[code]);
+      return;
+    }
+    if (!navigator.onLine) {
+      msg("❌ Code Badge « " + code + " » introuvable en cache hors-ligne.", "err");
+      return;
+    }
+    if (btnValiderBadge) btnValiderBadge.disabled = true;
+    fetch("https://ntfy.sh/sti_v2_diffusion_9482/json?poll=1&since=all")
+      .then(function (r) { return r.text(); })
+      .then(function (txt) {
+        if (btnValiderBadge) btnValiderBadge.disabled = false;
+        var mapTrouve = null;
+        (txt || "").trim().split("\n").forEach(function (ln) {
+          if (!ln) return;
+          try {
+            var ev = JSON.parse(ln);
+            if (ev && ev.message) {
+              var obj = JSON.parse(ev.message);
+              if (obj && obj.type === "cfg_ecoles" && obj.codesLaboMap) {
+                appliquerCfgEcolesPortail(obj);
+                if (obj.codesLaboMap[code]) mapTrouve = obj.codesLaboMap[code];
+              }
+            }
+          } catch (e) {}
+        });
+        if (mapTrouve) {
+          connecterAvecProfilBadge(mapTrouve);
+        } else {
+          msg("❌ Code Badge « " + code + " » non reconnu. Demandez au professeur d'actualiser les Badges Labo de la classe.", "err");
+        }
+      })
+      .catch(function () {
+        if (btnValiderBadge) btnValiderBadge.disabled = false;
+        msg("❌ Impossible de vérifier le Code Badge pour le moment.", "err");
+      });
+  }
+
+  if (btnValiderBadge) btnValiderBadge.addEventListener("click", validerCodeBadgeLabo);
+  if (inpCodeBadge) {
+    inpCodeBadge.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); validerCodeBadgeLabo(); }
+    });
+  }
 })();

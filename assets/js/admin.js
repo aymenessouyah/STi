@@ -8278,4 +8278,592 @@
       msg("📥 Notes des copies TP exportées en CSV Excel.", "ok");
     });
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🪪 1. BADGES D'ACCÈS RAPIDE AU LABORATOIRE (Code 6 caractères par élève)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var modalBadgesLabo = document.getElementById("modal-badges-labo");
+  var btnBadgesLaboTop = document.getElementById("btn-badges-labo-top");
+  var btnBadgesLaboCard = document.getElementById("btn-badges-labo-card");
+  var btnFermerBadges = document.getElementById("btn-fermer-badges");
+  var btnFermerBadgesX = document.getElementById("btn-fermer-badges-x");
+  var selBadgesClasse = document.getElementById("badges-sel-classe");
+  var btnBadgesSync = document.getElementById("btn-badges-sync");
+  var btnBadgesImprimer = document.getElementById("btn-badges-imprimer");
+  var divGrilleBadges = document.getElementById("grille-badges-labo");
+
+  var ALPHABET_BADGE = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  function calculerCodeBadgeEleve(p) {
+    if (!p) return "LABO00";
+    var clNorm = String(p.classe || "").trim().toLowerCase().replace(/[\s._\-]+/g, "");
+    if (clNorm === "elevelabo3") return "LABO03";
+    var seed = String(p.id || p.email || p.phone || p.nom || "");
+    var h1 = 17389;
+    var h2 = 54917;
+    for (var i = 0; i < seed.length; i++) {
+      var c = seed.charCodeAt(i);
+      h1 = ((h1 * 33) + c * (i + 3)) % 999983;
+      h2 = ((h2 * 29) ^ (c * (i + 11))) % 999979;
+    }
+    var code = "L";
+    var n = Math.abs(h1 * 13 + h2);
+    for (var k = 0; k < 5; k++) {
+      code += ALPHABET_BADGE[(n + k * 7) % ALPHABET_BADGE.length];
+      n = Math.floor(n / 7) + (h2 % 31);
+    }
+    return code;
+  }
+
+  function construireMapCodesLaboActifs() {
+    var map = {};
+    (profiles || []).forEach(function (p) {
+      if (!p || p.statut !== "actif") return;
+      var code = calculerCodeBadgeEleve(p);
+      map[code] = {
+        id: p.id,
+        nom: p.nom || "",
+        prenom: p.prenom || "",
+        classe: p.classe || "—",
+        lycee: nettoyerLycee(p.lycee) || "Lycée",
+        email: p.email || "",
+        phone: p.phone || "",
+        gold: aLeStatutGold(p)
+      };
+    });
+    return map;
+  }
+
+  function synchroniserCodesLaboDansCfgEcoles(silencieux) {
+    if (!cfgEcoles) return;
+    cfgEcoles.codesLaboMap = construireMapCodesLaboActifs();
+    sauverCfgEcoles();
+    if (!silencieux) {
+      msg("✅ Codes Badges Labo activés et synchronisés sur le portail pour " + Object.keys(cfgEcoles.codesLaboMap).length + " élève(s) actif(s) !", "ok");
+    }
+  }
+
+  function peuplerBadgesClasse() {
+    if (!selBadgesClasse) return;
+    var v = selBadgesClasse.value || (filtreClasse && filtreClasse !== "*" ? filtreClasse : "*");
+    var classes = obtenirClassesActives();
+    selBadgesClasse.innerHTML = '<option value="*">🌐 Toutes les classes</option>';
+    classes.forEach(function (c) {
+      var o = document.createElement("option");
+      o.value = c;
+      o.textContent = "🏫 Classe " + c;
+      selBadgesClasse.appendChild(o);
+    });
+    var ex = Array.prototype.some.call(selBadgesClasse.options, function (opt) { return opt.value === v; });
+    selBadgesClasse.value = ex ? v : "*";
+  }
+
+  function obtenirElevesBadgesFiltres() {
+    var cl = selBadgesClasse ? selBadgesClasse.value : "*";
+    return (profiles || []).filter(function (p) {
+      if (!p || p.statut !== "actif") return false;
+      return cl === "*" || p.classe === cl;
+    }).sort(function (a, b) {
+      return ((a.nom || "") + " " + (a.prenom || "")).localeCompare((b.nom || "") + " " + (b.prenom || ""));
+    });
+  }
+
+  function rendGrilleBadgesLabo() {
+    if (!divGrilleBadges) return;
+    var eleves = obtenirElevesBadgesFiltres();
+    if (!eleves.length) {
+      divGrilleBadges.innerHTML = "<div style='grid-column:1/-1;text-align:center;padding:20px;background:#fff;border:2px dashed #c7baa5;border-radius:12px;color:#6b6152;font-weight:800'>Aucun élève actif dans cette classe.</div>";
+      return;
+    }
+    divGrilleBadges.innerHTML = eleves.map(function (p) {
+      var nomC = ((p.nom || "") + " " + (p.prenom || "")).trim() || p.email || p.phone || "Élève";
+      var code = calculerCodeBadgeEleve(p);
+      return (
+        "<div style='background:#fff;border:2px solid #23201a;border-radius:14px;padding:10px 12px;box-shadow:2.5px 2.5px 0 #d97706;display:flex;flex-direction:column;justify-content:space-between;gap:6px'>" +
+          "<div>" +
+            "<div style='font-size:10.5px;font-weight:900;color:#b45309;text-transform:uppercase'>🪪 Badge Accès Labo STI</div>" +
+            "<div style='font-size:13.5px;font-weight:900;color:#23201a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>" + echHtml(nomC) + "</div>" +
+            "<div style='font-size:11.5px;font-weight:800;color:#5a5244'>🏫 Classe : <b>" + echHtml(p.classe || "—") + "</b></div>" +
+          "</div>" +
+          "<div style='background:#141a24;color:#fde047;border:2px solid #23201a;border-radius:10px;padding:6px;text-align:center;font:900 17px monospace;letter-spacing:.15em'>" +
+            echHtml(code) +
+          "</div>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function ouvrirModalBadgesLabo() {
+    peuplerBadgesClasse();
+    synchroniserCodesLaboDansCfgEcoles(true);
+    rendGrilleBadgesLabo();
+    if (modalBadgesLabo) modalBadgesLabo.classList.add("visible");
+  }
+
+  if (btnBadgesLaboTop) btnBadgesLaboTop.addEventListener("click", ouvrirModalBadgesLabo);
+  if (btnBadgesLaboCard) btnBadgesLaboCard.addEventListener("click", ouvrirModalBadgesLabo);
+  if (selBadgesClasse) selBadgesClasse.addEventListener("change", rendGrilleBadgesLabo);
+  if (btnBadgesSync) {
+    btnBadgesSync.addEventListener("click", function () {
+      synchroniserCodesLaboDansCfgEcoles(false);
+    });
+  }
+  if (btnBadgesImprimer) {
+    btnBadgesImprimer.addEventListener("click", function () {
+      var eleves = obtenirElevesBadgesFiltres();
+      var clTxt = (selBadgesClasse && selBadgesClasse.value !== "*") ? ("Classe " + selBadgesClasse.value) : "Toutes les classes";
+      var cardsHtml = eleves.map(function (p) {
+        var nomC = ((p.nom || "") + " " + (p.prenom || "")).trim() || p.email || p.phone || "Élève";
+        var code = calculerCodeBadgeEleve(p);
+        return (
+          "<div class='badge'>" +
+            "<div class='b-top'><span>📚 STI By A'e V2.0</span><span>🏫 " + echHtml(p.classe || "—") + "</span></div>" +
+            "<div class='b-nom'>" + echHtml(nomC) + "</div>" +
+            "<div class='b-code'>" + echHtml(code) + "</div>" +
+            "<div class='b-sub'>Sur <b>portail.html</b> ➔ cliquez sur « 🪪 Code Badge Labo »</div>" +
+          "</div>"
+        );
+      }).join("");
+
+      var doc =
+        "<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>Badges Labo STI - " + echHtml(clTxt) + "</title>" +
+        "<style>@page{size:A4;margin:10mm}body{font-family:'Segoe UI',system-ui,sans-serif;margin:0;padding:12px;color:#1e293b}" +
+        "h1{font-size:17px;margin:0 0 10px;border-bottom:2px solid #23201a;padding-bottom:6px}" +
+        ".grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}" +
+        ".badge{border:2px dashed #23201a;border-radius:12px;padding:10px;background:#fffdf7;page-break-inside:avoid}" +
+        ".b-top{display:flex;justify-content:space-between;font-size:10.5px;font-weight:900;color:#b45309;margin-bottom:4px}" +
+        ".b-nom{font-size:13.5px;font-weight:900;color:#23201a;margin-bottom:6px}" +
+        ".b-code{background:#141a24;color:#fde047;font:900 18px monospace;letter-spacing:.16em;text-align:center;padding:6px;border-radius:8px;border:1.5px solid #23201a}" +
+        ".b-sub{font-size:10px;color:#475569;text-align:center;margin-top:5px;font-weight:700}" +
+        "@media print{.no-print{display:none!important}}</style></head><body class='sti-pdf-doc'>" +
+        "<div class='no-print' style='margin-bottom:10px;text-align:right'><button onclick='window.print()' style='padding:7px 16px;font-weight:900;background:#177245;color:#fff;border:2px solid #23201a;border-radius:999px;cursor:pointer'>🖨️ Imprimer / PDF</button></div>" +
+        "<h1>🪪 Planche de Badges d'Accès Rapide au Laboratoire — " + echHtml(clTxt) + " (" + eleves.length + " élèves)</h1>" +
+        "<div class='grid'>" + cardsHtml + "</div></body></html>";
+      var w = window.open("", "_blank");
+      if (w) { w.document.open(); w.document.write(doc); w.document.close(); }
+    });
+  }
+  [btnFermerBadges, btnFermerBadgesX].forEach(function (b) {
+    if (b) b.addEventListener("click", function () { if (modalBadgesLabo) modalBadgesLabo.classList.remove("visible"); });
+  });
+  if (modalBadgesLabo) {
+    modalBadgesLabo.addEventListener("click", function (e) { if (e.target === modalBadgesLabo) modalBadgesLabo.classList.remove("visible"); });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🩺 2. DOCTEUR STI CÔTÉ PROF : FORCER LA MISE À JOUR CHEZ TOUS LES ÉLÈVES
+     ══════════════════════════════════════════════════════════════════════════ */
+  var btnForceUpdateEleves = document.getElementById("btn-force-update-eleves");
+  if (btnForceUpdateEleves) {
+    btnForceUpdateEleves.addEventListener("click", function () {
+      var payloadUpd = {
+        type: "force_update",
+        version: "v115",
+        ts: Date.now()
+      };
+      try {
+        sb.channel("sti-diffusion").send({ type: "broadcast", event: "force_update", payload: payloadUpd });
+      } catch (e) {}
+      fetch("https://ntfy.sh/" + CANAL_DIFFUSION, {
+        method: "POST",
+        body: JSON.stringify(payloadUpd)
+      }).catch(function () {});
+      msg("🩺 Signal de réparation & mise à jour envoyé en direct à tous les écrans d'élèves connectés !", "ok");
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🧮 3. CALCULATRICE DE BARÈME & GRILLE DE NOTATION RAPIDE (DC / DS)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var modalGrilleDevoirs = document.getElementById("modal-grille-devoirs");
+  var btnGrilleTop = document.getElementById("btn-grille-devoirs-top");
+  var btnGrilleCard = document.getElementById("btn-grille-devoirs-card");
+  var btnFermerGrille = document.getElementById("btn-fermer-grille");
+  var btnFermerGrilleX = document.getElementById("btn-fermer-grille-x");
+  var selGrilleClasse = document.getElementById("grille-sel-classe");
+  var selGrilleEpreuve = document.getElementById("grille-sel-epreuve");
+  var spanGrilleStats = document.getElementById("grille-stats-resume");
+  var tbGrilleDevoirs = document.getElementById("tb-grille-devoirs");
+  var btnGrilleImprimerPv = document.getElementById("btn-grille-imprimer-pv");
+  var btnGrilleExportCsv = document.getElementById("btn-grille-export-csv");
+  var btnGrillePublier = document.getElementById("btn-grille-publier");
+
+  var CLE_GRILLE_DEVOIRS = "sti-grille-devoirs-v1";
+  function lireGrilleDevoirsLocal() {
+    try { return JSON.parse(localStorage.getItem(CLE_GRILLE_DEVOIRS) || "{}"); } catch (e) { return {}; }
+  }
+  function sauverGrilleDevoirsLocal(data) {
+    try { localStorage.setItem(CLE_GRILLE_DEVOIRS, JSON.stringify(data)); } catch (e) {}
+  }
+
+  function peuplerGrilleClasses() {
+    if (!selGrilleClasse) return;
+    var classes = obtenirClassesActives();
+    var v = selGrilleClasse.value || (filtreClasse && filtreClasse !== "*" ? filtreClasse : (classes[0] || "*"));
+    selGrilleClasse.innerHTML = '<option value="*">🌐 Toutes les classes</option>';
+    classes.forEach(function (c) {
+      var o = document.createElement("option");
+      o.value = c;
+      o.textContent = "🏫 Classe " + c;
+      selGrilleClasse.appendChild(o);
+    });
+    var ex = Array.prototype.some.call(selGrilleClasse.options, function (opt) { return opt.value === v; });
+    selGrilleClasse.value = ex ? v : (classes[0] || "*");
+  }
+
+  function cleEpreuveCourante() {
+    var cl = selGrilleClasse ? selGrilleClasse.value : "*";
+    var ep = selGrilleEpreuve ? selGrilleEpreuve.value : "DC1";
+    return cl + "__" + ep;
+  }
+
+  function obtenirElevesGrille() {
+    var cl = selGrilleClasse ? selGrilleClasse.value : "*";
+    return (profiles || []).filter(function (p) {
+      if (!p || p.statut === "exclu") return false;
+      return cl === "*" || p.classe === cl;
+    }).sort(function (a, b) {
+      return ((a.nom || "") + " " + (a.prenom || "")).localeCompare((b.nom || "") + " " + (b.prenom || ""));
+    });
+  }
+
+  function majStatsGrille() {
+    var tout = lireGrilleDevoirsLocal();
+    var mapEp = tout[cleEpreuveCourante()] || {};
+    var eleves = obtenirElevesGrille();
+    var notes = [];
+    eleves.forEach(function (p) {
+      var r = mapEp[p.id];
+      if (r && r.total != null && r.total !== "") notes.push(Number(r.total));
+    });
+    if (!spanGrilleStats) return;
+    if (!notes.length) {
+      spanGrilleStats.textContent = "Moyenne classe : — / 20 · Min : — · Max : — (0 copie notée)";
+      return;
+    }
+    var sum = notes.reduce(function (a, b) { return a + b; }, 0);
+    var moy = Math.round((sum / notes.length) * 100) / 100;
+    var minN = Math.min.apply(null, notes);
+    var maxN = Math.max.apply(null, notes);
+    spanGrilleStats.textContent = "Moyenne classe : " + moy + " / 20 · Min : " + minN + " · Max : " + maxN + " (" + notes.length + "/" + eleves.length + " notés)";
+  }
+
+  function rendTableGrilleDevoirs() {
+    if (!tbGrilleDevoirs) return;
+    var eleves = obtenirElevesGrille();
+    var tout = lireGrilleDevoirsLocal();
+    var cle = cleEpreuveCourante();
+    if (!tout[cle]) tout[cle] = {};
+    var mapEp = tout[cle];
+
+    if (!eleves.length) {
+      tbGrilleDevoirs.innerHTML = "<tr><td colspan='8' style='text-align:center;color:#7a6f5d;padding:16px'>Aucun élève dans cette classe.</td></tr>";
+      majStatsGrille();
+      return;
+    }
+
+    tbGrilleDevoirs.innerHTML = "";
+    eleves.forEach(function (p, idx) {
+      var r = mapEp[p.id] || { p1: "", p2: "", p3: "", p4: "", total: "", obs: "" };
+      var nomC = ((p.nom || "") + " " + (p.prenom || "")).trim() || p.email || p.phone || "Élève";
+      var tr = document.createElement("tr");
+
+      function creerInputPartie(cleP, maxP) {
+        var inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0";
+        inp.max = String(maxP);
+        inp.step = "0.25";
+        inp.value = r[cleP] !== "" && r[cleP] != null ? String(r[cleP]) : "";
+        inp.placeholder = "/" + maxP;
+        inp.style.cssText = "width:68px;margin:0;padding:5px 6px;font-weight:900;border:1.5px solid #23201a;border-radius:8px;text-align:center;";
+        inp.addEventListener("input", function () {
+          var v = inp.value.trim();
+          r[cleP] = v === "" ? "" : Math.max(0, Math.min(maxP, Number(v)));
+          var aUneNote = (r.p1 !== "" || r.p2 !== "" || r.p3 !== "" || r.p4 !== "");
+          if (aUneNote) {
+            var tot = (Number(r.p1 || 0) + Number(r.p2 || 0) + Number(r.p3 || 0) + Number(r.p4 || 0));
+            r.total = Math.round(Math.min(20, tot) * 100) / 100;
+            bTot.textContent = r.total + " / 20";
+            bTot.style.color = r.total >= 10 ? "#177245" : "#c0392b";
+          } else {
+            r.total = "";
+            bTot.textContent = "—";
+          }
+          mapEp[p.id] = r;
+          tout[cle] = mapEp;
+          sauverGrilleDevoirsLocal(tout);
+          majStatsGrille();
+        });
+        return inp;
+      }
+
+      var tdNum = document.createElement("td");
+      tdNum.textContent = String(idx + 1);
+      var tdNom = document.createElement("td");
+      tdNom.innerHTML = "<b>" + echHtml(nomC) + "</b> <small style='color:#6b6152'>(" + echHtml(p.classe || "—") + ")</small>";
+
+      var tdP1 = document.createElement("td");
+      var tdP2 = document.createElement("td");
+      var tdP3 = document.createElement("td");
+      var tdP4 = document.createElement("td");
+      var tdTot = document.createElement("td");
+      var bTot = document.createElement("b");
+      bTot.style.fontSize = "14px";
+      bTot.textContent = (r.total !== "" && r.total != null) ? (r.total + " / 20") : "—";
+      bTot.style.color = Number(r.total || 0) >= 10 ? "#177245" : "#c0392b";
+      tdTot.appendChild(bTot);
+
+      tdP1.appendChild(creerInputPartie("p1", 6));
+      tdP2.appendChild(creerInputPartie("p2", 6));
+      tdP3.appendChild(creerInputPartie("p3", 4));
+      tdP4.appendChild(creerInputPartie("p4", 4));
+
+      var tdObs = document.createElement("td");
+      var inpObs = document.createElement("input");
+      inpObs.type = "text";
+      inpObs.value = r.obs || "";
+      inpObs.placeholder = "Observation…";
+      inpObs.style.cssText = "width:140px;margin:0;padding:5px 7px;font-weight:700;border:1.5px solid #23201a;border-radius:8px;";
+      inpObs.addEventListener("input", function () {
+        r.obs = inpObs.value;
+        mapEp[p.id] = r;
+        tout[cle] = mapEp;
+        sauverGrilleDevoirsLocal(tout);
+      });
+      tdObs.appendChild(inpObs);
+
+      tr.append(tdNum, tdNom, tdP1, tdP2, tdP3, tdP4, tdTot, tdObs);
+      tbGrilleDevoirs.appendChild(tr);
+    });
+    majStatsGrille();
+  }
+
+  function ouvrirModalGrilleDevoirs() {
+    peuplerGrilleClasses();
+    rendTableGrilleDevoirs();
+    if (modalGrilleDevoirs) modalGrilleDevoirs.classList.add("visible");
+  }
+
+  if (btnGrilleTop) btnGrilleTop.addEventListener("click", ouvrirModalGrilleDevoirs);
+  if (btnGrilleCard) btnGrilleCard.addEventListener("click", ouvrirModalGrilleDevoirs);
+  if (selGrilleClasse) selGrilleClasse.addEventListener("change", rendTableGrilleDevoirs);
+  if (selGrilleEpreuve) selGrilleEpreuve.addEventListener("change", rendTableGrilleDevoirs);
+  [btnFermerGrille, btnFermerGrilleX].forEach(function (b) {
+    if (b) b.addEventListener("click", function () { if (modalGrilleDevoirs) modalGrilleDevoirs.classList.remove("visible"); });
+  });
+  if (modalGrilleDevoirs) {
+    modalGrilleDevoirs.addEventListener("click", function (e) { if (e.target === modalGrilleDevoirs) modalGrilleDevoirs.classList.remove("visible"); });
+  }
+
+  if (btnGrillePublier) {
+    btnGrillePublier.addEventListener("click", function () {
+      var tout = lireGrilleDevoirsLocal();
+      var mapEp = tout[cleEpreuveCourante()] || {};
+      var epNom = selGrilleEpreuve ? selGrilleEpreuve.value : "Devoir STI";
+      var eleves = obtenirElevesGrille();
+      var nbEnv = 0;
+      eleves.forEach(function (p) {
+        var r = mapEp[p.id];
+        if (!r || r.total === "" || r.total == null) return;
+        nbEnv++;
+        var detailStr = "P1(HTML/CSS): " + (r.p1 || 0) + "/6 · P2(JS): " + (r.p2 || 0) + "/6 · P3(SQL): " + (r.p3 || 0) + "/4 · P4(PHP): " + (r.p4 || 0) + "/4" + (r.obs ? (" — " + r.obs) : "");
+        var payloadNote = {
+          type: "copie_note",
+          idCopie: "dev_" + cleEpreuveCourante() + "_" + p.id,
+          uid: p.id,
+          typeTp: epNom,
+          note: r.total,
+          obs: detailStr,
+          ts: Date.now()
+        };
+        sb.from("acces").insert({
+          user_id: p.id,
+          page: "QUIZ:" + epNom,
+          lieu: JSON.stringify({ quiz: epNom, score: r.total, total: 20, note20: r.total, ts: new Date().toISOString() }),
+          duree_sec: 0
+        }).then(function () {});
+        try {
+          sb.channel("sti-diffusion").send({ type: "broadcast", event: "copie_note", payload: payloadNote });
+        } catch (e) {}
+      });
+      msg("✅ " + nbEnv + " note(s) de « " + epNom + " » enregistrées dans les dossiers élèves et envoyées en direct !", "ok");
+    });
+  }
+
+  if (btnGrilleExportCsv) {
+    btnGrilleExportCsv.addEventListener("click", function () {
+      var tout = lireGrilleDevoirsLocal();
+      var mapEp = tout[cleEpreuveCourante()] || {};
+      var epNom = selGrilleEpreuve ? selGrilleEpreuve.value : "Devoir";
+      var clNom = selGrilleClasse ? selGrilleClasse.value : "Toutes";
+      var eleves = obtenirElevesGrille();
+      var lignes = ['"N";"Nom";"Prenom";"Classe";"Epreuve";"P1 HTML/CSS (/6)";"P2 JS (/6)";"P3 SQL (/4)";"P4 PHP (/4)";"Note Finale (/20)";"Observation"'];
+      eleves.forEach(function (p, idx) {
+        var r = mapEp[p.id] || {};
+        var cols = [
+          idx + 1,
+          p.nom || "",
+          p.prenom || "",
+          p.classe || "",
+          epNom,
+          r.p1 != null && r.p1 !== "" ? String(r.p1).replace(".", ",") : "",
+          r.p2 != null && r.p2 !== "" ? String(r.p2).replace(".", ",") : "",
+          r.p3 != null && r.p3 !== "" ? String(r.p3).replace(".", ",") : "",
+          r.p4 != null && r.p4 !== "" ? String(r.p4).replace(".", ",") : "",
+          r.total != null && r.total !== "" ? String(r.total).replace(".", ",") : "",
+          r.obs || ""
+        ].map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; });
+        lignes.push(cols.join(";"));
+      });
+      var blob = new Blob(["\uFEFF" + lignes.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "Notes_" + epNom.replace(/\s+/g, "_") + "_" + clNom + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      msg("📥 Grille de notes exportée au format CSV (Excel / Eduserv).", "ok");
+    });
+  }
+
+  if (btnGrilleImprimerPv) {
+    btnGrilleImprimerPv.addEventListener("click", function () {
+      var tout = lireGrilleDevoirsLocal();
+      var mapEp = tout[cleEpreuveCourante()] || {};
+      var epNom = selGrilleEpreuve ? selGrilleEpreuve.value : "Devoir";
+      var clNom = selGrilleClasse ? selGrilleClasse.value : "Toutes";
+      var eleves = obtenirElevesGrille();
+      var rows = eleves.map(function (p, idx) {
+        var r = mapEp[p.id] || {};
+        return "<tr><td>" + (idx + 1) + "</td><td><b>" + echHtml(((p.nom || "") + " " + (p.prenom || "")).trim()) + "</b></td><td>" + echHtml(p.classe || "—") + "</td><td>" + (r.p1 != null && r.p1 !== "" ? r.p1 : "—") + "</td><td>" + (r.p2 != null && r.p2 !== "" ? r.p2 : "—") + "</td><td>" + (r.p3 != null && r.p3 !== "" ? r.p3 : "—") + "</td><td>" + (r.p4 != null && r.p4 !== "" ? r.p4 : "—") + "</td><td><b>" + (r.total != null && r.total !== "" ? (r.total + " / 20") : "—") + "</b></td><td>" + echHtml(r.obs || "") + "</td></tr>";
+      }).join("");
+      var doc = "<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>PV Notes - " + echHtml(epNom) + "</title><style>@page{size:A4;margin:12mm}body{font-family:'Segoe UI',sans-serif;font-size:12px;color:#1e293b}h1{font-size:17px;margin:0 0 8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #94a3b8;padding:6px 8px;text-align:left}th{background:#f1f5f9}@media print{.no-print{display:none!important}}</style></head><body class='sti-pdf-doc'><div class='no-print' style='text-align:right;margin-bottom:8px'><button onclick='window.print()' style='padding:7px 15px;font-weight:900;background:#177245;color:#fff;border:2px solid #23201a;border-radius:999px;cursor:pointer'>🖨️ Imprimer PV A4</button></div><h1>📋 Procès-Verbal de Notes STI — " + echHtml(epNom) + " (Classe : " + echHtml(clNom) + ")</h1><p><b>Professeur :</b> M. Aymen Essouyah · <b>Date :</b> " + echHtml(new Date().toLocaleDateString("fr-FR")) + "</p><table><thead><tr><th>#</th><th>Nom &amp; Prénom</th><th>Classe</th><th>P1 (/6)</th><th>P2 (/6)</th><th>P3 (/4)</th><th>P4 (/4)</th><th>Total (/20)</th><th>Observation</th></tr></thead><tbody>" + rows + "</tbody></table></body></html>";
+      var w = window.open("", "_blank");
+      if (w) { w.document.open(); w.document.write(doc); w.document.close(); }
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🧹 5. ANALYSEUR & NETTOYEUR INTELLIGENT DU QUOTA SUPABASE (500 Mo)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var modalQuotaSb = document.getElementById("modal-quota-supabase");
+  var badgeQuotaTop = document.getElementById("badge-supabase-quota");
+  var sousQuotaTop = document.getElementById("sous-supabase-quota");
+  var divRepartitionQuota = document.getElementById("contenu-repartition-quota");
+  var btnPurgeLourds30j = document.getElementById("btn-purge-lourds-30j");
+  var btnPurgeCoffrePj = document.getElementById("btn-purge-coffre-pj");
+  var btnPurgeJournauxTech = document.getElementById("btn-purge-journaux-tech");
+  var btnFermerQuota = document.getElementById("btn-fermer-quota");
+  var btnFermerQuotaX = document.getElementById("btn-fermer-quota-x");
+
+  function fmtOctetsQuota(b) {
+    var n = Number(b || 0);
+    if (n < 1024) return n + " o";
+    if (n < 1024 * 1024) return (Math.round((n / 1024) * 10) / 10) + " Ko";
+    return (Math.round((n / (1024 * 1024)) * 100) / 100) + " Mo";
+  }
+
+  function analyserRepartitionQuotaSupabase() {
+    if (!divRepartitionQuota) return;
+    var cat = {
+      pj: { lbl: "📎 Messages & Pièces jointes Messenger STI", nb: 0, octets: 0, col: "#f4511e" },
+      coffre: { lbl: "🗂️ Fichiers distribués dans le Coffre TP", nb: 0, octets: 0, col: "#d97706" },
+      copies: { lbl: "💻 Copies & TP rendus par les élèves", nb: 0, octets: 0, col: "#15803d" },
+      nav: { lbl: "🕒 Historique de navigation & présence", nb: 0, octets: 0, col: "#0284c7" },
+      sec: { lbl: "🛡️ Alertes de sécurité & journaux techniques", nb: 0, octets: 0, col: "#c0392b" },
+      quiz: { lbl: "🏆 Notes de Quiz & Profils élèves (🔒 Protégés)", nb: (profiles || []).length, octets: (profiles || []).length * 420, col: "#6d28d9" }
+    };
+
+    (tousAcces || []).forEach(function (a) {
+      var pg = String(a.page || "");
+      var taille = 140 + pg.length + String(a.lieu || "").length;
+      if (pg.indexOf("COFFRE_TP") === 0) {
+        cat.coffre.nb++; cat.coffre.octets += taille;
+      } else if (pg.indexOf("COPIE_") === 0) {
+        cat.copies.nb++; cat.copies.octets += taille;
+      } else if (pg.indexOf("MSG_") === 0) {
+        cat.pj.nb++; cat.pj.octets += taille;
+      } else if (pg.indexOf("QUIZ:") === 0) {
+        cat.quiz.nb++; cat.quiz.octets += taille;
+      } else if (pg.indexOf("SEC_") === 0 || pg.indexOf("MAIN_LEVEE:") === 0 || pg.indexOf("KAHOOT_") === 0 || pg.indexOf("FLASH_") === 0 || pg === "TABLEAU_BLANC") {
+        cat.sec.nb++; cat.sec.octets += taille;
+      } else {
+        cat.nav.nb++; cat.nav.octets += taille;
+      }
+    });
+
+    var totOctets = Object.keys(cat).reduce(function (s, k) { return s + cat[k].octets; }, 0) || 1;
+    divRepartitionQuota.innerHTML = Object.keys(cat).map(function (k) {
+      var it = cat[k];
+      var pct = Math.min(100, Math.round((it.octets / totOctets) * 100));
+      return (
+        "<div style='background:#fff;border:1.5px solid #23201a;border-radius:11px;padding:8px 11px'>" +
+          "<div style='display:flex;justify-content:space-between;font-size:12px;font-weight:900;margin-bottom:4px'>" +
+            "<span>" + it.lbl + "</span>" +
+            "<span>" + it.nb + " entrée(s) · <b>" + fmtOctetsQuota(it.octets) + "</b> (" + pct + " %)</span>" +
+          "</div>" +
+          "<div style='height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden'>" +
+            "<div style='height:100%;width:" + Math.max(3, pct) + "%;background:" + it.col + "'></div>" +
+          "</div>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function ouvrirModalQuotaSupabase() {
+    analyserRepartitionQuotaSupabase();
+    if (modalQuotaSb) modalQuotaSb.classList.add("visible");
+  }
+
+  if (badgeQuotaTop) badgeQuotaTop.addEventListener("click", ouvrirModalQuotaSupabase);
+  if (sousQuotaTop) sousQuotaTop.addEventListener("click", ouvrirModalQuotaSupabase);
+  [btnFermerQuota, btnFermerQuotaX].forEach(function (b) {
+    if (b) b.addEventListener("click", function () { if (modalQuotaSb) modalQuotaSb.classList.remove("visible"); });
+  });
+  if (modalQuotaSb) {
+    modalQuotaSb.addEventListener("click", function (e) { if (e.target === modalQuotaSb) modalQuotaSb.classList.remove("visible"); });
+  }
+
+  if (btnPurgeLourds30j) {
+    btnPurgeLourds30j.addEventListener("click", function () {
+      var limIso = new Date(Date.now() - 30 * 86400000).toISOString();
+      Promise.all([
+        sb.from("acces").delete().like("page", "COFFRE_TP%").lt("debut", limIso),
+        sb.from("acces").delete().like("page", "MSG_%").lt("debut", limIso)
+      ]).then(function () {
+        msg("🧹 Fichiers lourds et pièces jointes de plus de 30 jours purgés avec succès !", "ok");
+        charger(true);
+        setTimeout(analyserRepartitionQuotaSupabase, 800);
+      });
+    });
+  }
+  if (btnPurgeCoffrePj) {
+    btnPurgeCoffrePj.addEventListener("click", function () {
+      Promise.all([
+        sb.from("acces").delete().like("page", "COFFRE_TP%"),
+        sb.from("acces").delete().like("page", "MSG_%")
+      ]).then(function () {
+        window.__stiListeCoffreAdmin = [];
+        rendListeCoffreAdmin();
+        msg("🗑️ Pièces jointes Messenger et fichiers du Coffre TP purgés (profils et quiz intacts) !", "ok");
+        charger(true);
+        setTimeout(analyserRepartitionQuotaSupabase, 800);
+      });
+    });
+  }
+  if (btnPurgeJournauxTech) {
+    btnPurgeJournauxTech.addEventListener("click", function () {
+      Promise.all([
+        sb.from("acces").delete().like("page", "SEC_ALERTE:%"),
+        sb.from("acces").delete().like("page", "MAIN_LEVEE:%"),
+        sb.from("acces").delete().like("page", "KAHOOT_%")
+      ]).then(function () {
+        msg("🛡️ Journaux techniques, alertes et votes temporaires purgés (profils et quiz intacts) !", "ok");
+        charger(true);
+        setTimeout(analyserRepartitionQuotaSupabase, 800);
+      });
+    });
+  }
 })();

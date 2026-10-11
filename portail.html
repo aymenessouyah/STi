@@ -274,6 +274,17 @@
       </div>
       <input id="c-captcha" type="text" required placeholder="Code ci-dessus" autocomplete="off" />
       <button class="btn" type="submit">🔐 Se connecter</button>
+
+      <div style="margin-top:12px;padding-top:10px;border-top:1px dashed rgba(148,163,184,.28)">
+        <button type="button" id="btn-toggle-badge-labo" style="width:100%;background:rgba(255,255,255,.06);color:#fde68a;border:1.5px solid rgba(251,191,36,.45);border-radius:11px;padding:8px 10px;font:800 12px/1.3 system-ui,'Segoe UI',sans-serif;cursor:pointer">🪪 Au labo ? Connexion rapide par Code Badge (6 caractères)</button>
+        <div id="zone-badge-labo" hidden style="margin-top:8px;background:rgba(15,23,42,.75);border:1.5px solid rgba(251,191,36,.45);border-radius:12px;padding:10px">
+          <label for="inp-code-badge-labo" style="margin-top:0;color:#fde68a;font-size:11.5px">🔑 Code Badge Labo (remis par M. Essouyah) :</label>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <input id="inp-code-badge-labo" type="text" maxlength="8" placeholder="Ex : L8K4P2" autocomplete="off" style="margin:0;text-transform:uppercase;font:900 15px monospace;letter-spacing:.12em;text-align:center" />
+            <button type="button" id="btn-valider-badge-labo" style="background:linear-gradient(125deg,#d97706,#b45309);color:#fff;border:0;border-radius:10px;padding:0 14px;font-weight:900;font-size:12.5px;cursor:pointer;white-space:nowrap">⚡ Entrer</button>
+          </div>
+        </div>
+      </div>
     </form>
 
     <form id="f-inscription" hidden autocomplete="on">
@@ -368,7 +379,7 @@
   </div>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=114"></script>
+<script src="assets/js/config.js?v=115"></script>
 <script>
   /* ================= Tagline STI : effet machine à écrire (dactylo) identique à index.html ================= */
   (function () {
@@ -418,8 +429,8 @@
     document.getElementById("msg").textContent = "❌ Le script Supabase n'a pas pu être chargé — rechargez la page.";
   }
 </script>
-<link rel="stylesheet" href="assets/css/protection.css?v=114" />
-<script src="assets/js/protection.js?v=114" defer></script>
-<script src="assets/js/portail.js?v=114"></script>
+<link rel="stylesheet" href="assets/css/protection.css?v=115" />
+<script src="assets/js/protection.js?v=115" defer></script>
+<script src="assets/js/portail.js?v=115"></script>
 </body>
 </html>

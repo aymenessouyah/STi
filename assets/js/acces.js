@@ -670,6 +670,7 @@
   function purgerStockageLocal() {
     try {
       localStorage.removeItem("sti-labo3-permanent");
+      localStorage.removeItem("sti-labo-badge-sess");
       localStorage.removeItem("sti-offline");
       localStorage.removeItem("sti-session-cache");
       localStorage.removeItem("sti-reauth");
@@ -1275,6 +1276,30 @@
       if (window.ouvrirCoffreTpEleveSTI) window.ouvrirCoffreTpEleveSTI();
     });
     pan.appendChild(btnCoffrePan);
+
+    var btnSplitPan = document.createElement("button");
+    btnSplitPan.type = "button";
+    btnSplitPan.textContent = "🌗 Écran Partagé (Énoncé + Code)";
+    btnSplitPan.style.cssText = "display:block;width:100%;margin:6px 0 0 auto;border:1.5px solid #0f766e;background:#ccfbf1;color:#115e59;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11.5px;cursor:pointer;";
+    btnSplitPan.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fermer();
+      if (window.ouvrirEcranPartageEnonceCodeSTI) window.ouvrirEcranPartageEnonceCodeSTI();
+    });
+    pan.appendChild(btnSplitPan);
+
+    var btnDocPan = document.createElement("button");
+    btnDocPan.type = "button";
+    btnDocPan.textContent = "🩺 Diagnostic & Réparer (Docteur STI)";
+    btnDocPan.style.cssText = "display:block;width:100%;margin:6px 0 0 auto;border:1.5px solid #15803d;background:#dcfce7;color:#166534;border-radius:9px;padding:6px 10px;font-weight:900;font-size:11.5px;cursor:pointer;";
+    btnDocPan.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fermer();
+      if (window.ouvrirDocteurSTI) window.ouvrirDocteurSTI();
+    });
+    pan.appendChild(btnDocPan);
 
     var btnMainPan = document.createElement("button");
     btnMainPan.id = "sti-btn-main-levee";
@@ -2867,6 +2892,8 @@
                   if (typeof window.__stiAfficherKahootEleve === "function") window.__stiAfficherKahootEleve(a, uid);
                 } else if (a && a.type === "copie_note" && a.uid === uid) {
                   if (typeof window.__stiAfficherNoteCopieEleve === "function") window.__stiAfficherNoteCopieEleve(a);
+                } else if (a && a.type === "force_update") {
+                  if (typeof window.__stiExecuterForceUpdate === "function") window.__stiExecuterForceUpdate(a);
                 } else if (a && a.type === "sec_config") {
                   if (!dernierSecCfg || Number(a.ts || 0) >= Number(dernierSecCfg.ts || 0)) dernierSecCfg = a;
                 } else if (a && a.type === "session_unique" && a.uid === uid) {
@@ -2922,6 +2949,11 @@
         .on("broadcast", { event: "copie_note" }, function (p) {
           if (p && p.payload && p.payload.uid === uid && typeof window.__stiAfficherNoteCopieEleve === "function") {
             window.__stiAfficherNoteCopieEleve(p.payload);
+          }
+        })
+        .on("broadcast", { event: "force_update" }, function (p) {
+          if (p && p.payload && typeof window.__stiExecuterForceUpdate === "function") {
+            window.__stiExecuterForceUpdate(p.payload);
           }
         })
         .on("broadcast", { event: "sec_config" }, function (p) {
@@ -9283,6 +9315,247 @@
     fond.addEventListener("click", function (e) { if (e.target === fond) fond.remove(); });
 
     majLaboAscii();
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🩺 2. DIAGNOSTIC TECHNIQUE & RÉPARATION EN 1 CLIC (« DOCTEUR STI »)
+     ══════════════════════════════════════════════════════════════════════════ */
+  window.__stiExecuterForceUpdate = function (payload) {
+    if (!payload || !payload.ts) return;
+    if (Date.now() - Number(payload.ts) > 120000) return; // ignorer si > 2 min
+    var cleF = "sti-force-upd-ts";
+    var dernierTs = 0;
+    try { dernierTs = Number(localStorage.getItem(cleF) || 0); } catch (e) {}
+    if (Number(payload.ts) <= dernierTs) return;
+    try { localStorage.setItem(cleF, String(payload.ts)); } catch (e) {}
+
+    afficherToastSynchro("🩺 Mise à jour demandée par le professeur… Actualisation du cache en cours !");
+    if ("caches" in window) {
+      caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+      }).then(function () {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.update(); });
+            setTimeout(function () { location.reload(); }, 600);
+          });
+        } else {
+          location.reload();
+        }
+      });
+    } else {
+      location.reload();
+    }
+  };
+
+  window.ouvrirDocteurSTI = function () {
+    var ex = document.getElementById("sti-modal-docteur");
+    if (ex) { ex.remove(); return; }
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-docteur";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(13,18,30,.82);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:14px;font:600 13px/1.45 system-ui,'Segoe UI',sans-serif;";
+
+    var boite = document.createElement("div");
+    boite.style.cssText = "background:#fffdf7;color:#23201a;border:3px solid #23201a;border-radius:20px;max-width:560px;width:100%;padding:18px 20px;box-shadow:6px 6px 0 #15803d;color-scheme:light;";
+
+    boite.innerHTML =
+      "<div style='display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2.5px solid #23201a;padding-bottom:10px;margin-bottom:12px'>" +
+        "<strong style='font-size:16px;font-weight:900;color:#166534'>🩺 Docteur STI — Diagnostic Technique &amp; Réparation</strong>" +
+        "<button type='button' id='sti-doc-close' style='border:2px solid #23201a;background:#c0392b;color:#fff;border-radius:10px;width:32px;height:30px;font-weight:900;cursor:pointer'>✕</button>" +
+      "</div>" +
+      "<div id='sti-doc-items' style='display:flex;flex-direction:column;gap:8px;margin-bottom:14px'>" +
+        "<div style='padding:10px;background:#f9f1e3;border:1.5px solid #23201a;border-radius:10px'>⏳ Analyse de votre navigateur en cours…</div>" +
+      "</div>" +
+      "<div style='display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap'>" +
+        "<button type='button' id='sti-doc-reparer' style='flex:1;border:2px solid #23201a;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:900;background:linear-gradient(125deg,#15803d,#22c55e);color:#fff;cursor:pointer;box-shadow:3px 3px 0 #23201a'>🔧 Réparer &amp; Mettre à jour le cache maintenant (sans déconnexion)</button>" +
+      "</div>";
+
+    fond.appendChild(boite);
+    (document.body || document.documentElement).appendChild(fond);
+
+    var divItems = boite.querySelector("#sti-doc-items");
+    var t0 = Date.now();
+    var pPing = navigator.onLine
+      ? fetch(cfg.URL + "/rest/v1/", { method: "HEAD", headers: { apikey: cfg.CLE } }).then(function () { return (Date.now() - t0) + " ms"; }).catch(function () { return "Hors-ligne"; })
+      : Promise.resolve("Hors-ligne");
+
+    var pCache = ("caches" in window)
+      ? caches.keys().then(function (keys) {
+          var nomAct = keys[keys.length - 1] || "Aucun";
+          if (!keys.length) return { nom: "Aucun cache", nb: 0 };
+          return caches.open(nomAct).then(function (c) {
+            return c.keys().then(function (reqs) {
+              return { nom: nomAct, nb: reqs.length };
+            });
+          });
+        }).catch(function () { return { nom: "Indisponible", nb: 0 }; })
+      : Promise.resolve({ nom: "Non supporté", nb: 0 });
+
+    var pStorage = (navigator.storage && navigator.storage.estimate)
+      ? navigator.storage.estimate().then(function (est) {
+          var u = Math.round(((est.usage || 0) / (1024 * 1024)) * 10) / 10;
+          var q = Math.round(((est.quota || 0) / (1024 * 1024)));
+          return u + " Mo utilisés / " + q + " Mo disponibles";
+        }).catch(function () { return "Standard"; })
+      : Promise.resolve("Standard");
+
+    Promise.all([pPing, pCache, pStorage]).then(function (res) {
+      var lat = res[0];
+      var infoC = res[1];
+      var infoS = res[2];
+      var qOff = [];
+      try { qOff = JSON.parse(localStorage.getItem(CLE_FILE_OFFLINE) || "[]"); } catch (e) {}
+
+      divItems.innerHTML =
+        "<div style='display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border:1.5px solid #23201a;border-radius:10px'><span>🏷️ Version du cache Service Worker :</span><b>" + esc(infoC.nom) + "</b></div>" +
+        "<div style='display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border:1.5px solid #23201a;border-radius:10px'><span>📦 Fichiers stockés hors-ligne :</span><b>" + infoC.nb + " / 428 fichiers (" + Math.min(100, Math.round((infoC.nb / 428) * 100)) + " %)</b></div>" +
+        "<div style='display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border:1.5px solid #23201a;border-radius:10px'><span>🌐 Connexion &amp; Latence Supabase :</span><b style='color:" + (navigator.onLine ? "#15803d" : "#c0392b") + "'>" + (navigator.onLine ? ("🟢 En ligne (" + esc(lat) + ")") : "📴 Mode Hors-ligne actif") + "</b></div>" +
+        "<div style='display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border:1.5px solid #23201a;border-radius:10px'><span>💾 Espace navigateur :</span><b>" + esc(infoS) + "</b></div>" +
+        "<div style='display:flex;justify-content:space-between;padding:8px 12px;background:#f8fafc;border:1.5px solid #23201a;border-radius:10px'><span>🔄 Éléments en attente de synchro :</span><b>" + qOff.length + " élément(s)</b></div>";
+    });
+
+    boite.querySelector("#sti-doc-reparer").addEventListener("click", function () {
+      var btnR = boite.querySelector("#sti-doc-reparer");
+      btnR.disabled = true;
+      btnR.textContent = "⏳ Nettoyage des anciens caches & réparation en cours…";
+      synchroniserFileHorsLigne(true);
+      if ("caches" in window) {
+        caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        }).then(function () {
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) { r.update(); });
+              setTimeout(function () { location.reload(); }, 500);
+            });
+          } else {
+            location.reload();
+          }
+        });
+      } else {
+        location.reload();
+      }
+    });
+
+    boite.querySelector("#sti-doc-close").addEventListener("click", function () { fond.remove(); });
+    fond.addEventListener("click", function (e) { if (e.target === fond) fond.remove(); });
+  };
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🗂️ 4. MODE COMPARATEUR CÔTE À CÔTE : ÉNONCÉ / SÉRIE + ÉDITEUR DE CODE
+     ══════════════════════════════════════════════════════════════════════════ */
+  window.ouvrirEcranPartageEnonceCodeSTI = function (urlInitiale) {
+    var ex = document.getElementById("sti-modal-split-enonce-code");
+    if (ex) { ex.remove(); return; }
+
+    var rBase = cfg.RACINE || "./";
+    var docParDefaut = urlInitiale || (rBase + "exercices/series-exercices.html");
+
+    var fond = document.createElement("div");
+    fond.id = "sti-modal-split-enonce-code";
+    fond.className = "sti-no-print";
+    fond.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#0f172a;display:flex;flex-direction:column;font:600 13px/1.45 system-ui,'Segoe UI',sans-serif;color:#f8fafc;";
+
+    fond.innerHTML =
+      "<div style='display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#1e293b;border-bottom:2px solid #0f766e'>" +
+        "<div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap'>" +
+          "<strong style='font-size:14.5px;color:#5eead4'>🌗 Écran Partagé STI — Énoncé à gauche · Code en direct à droite</strong>" +
+          "<select id='sti-split-sel-doc' style='border:1.5px solid #5eead4;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;background:#0f172a;color:#fff'>" +
+            "<option value='" + esc(rBase + "exercices/series-exercices.html") + "'>🏋️ Séries d'exercices &amp; TP STI</option>" +
+            "<option value='" + esc(rBase + "documents/annexes/annexe-html5.pdf.html") + "'>📄 Annexe Officielle HTML5</option>" +
+            "<option value='" + esc(rBase + "documents/annexes/annexe-css3.pdf.html") + "'>🎨 Annexe Officielle CSS3</option>" +
+            "<option value='" + esc(rBase + "documents/annexes/annexe-javascript.pdf.html") + "'>⚡ Annexe Officielle JavaScript</option>" +
+            "<option value='" + esc(rBase + "documents/annexes/annexe-sql.pdf.html") + "'>🗄️ Annexe Officielle SQL</option>" +
+            "<option value='" + esc(rBase + "documents/annexes/annexe-php.pdf.html") + "'>🐘 Annexe Officielle PHP / MySQLi</option>" +
+            "<option value='" + esc(rBase + "exercices/resume-fonctions-standards.html") + "'>📋 Résumé des fonctions standards</option>" +
+          "</select>" +
+        "</div>" +
+        "<div style='display:flex;gap:6px;flex-wrap:wrap'>" +
+          "<button type='button' id='sti-split-run' style='border:1.5px solid #fff;background:#10b981;color:#0f172a;border-radius:999px;padding:5px 13px;font-weight:900;font-size:12px;cursor:pointer'>▶ Exécuter mon code</button>" +
+          "<button type='button' id='sti-split-send' style='border:1.5px solid #fff;background:#ffd54f;color:#23201a;border-radius:999px;padding:5px 13px;font-weight:900;font-size:12px;cursor:pointer'>📤 Envoyer ma copie au Prof</button>" +
+          "<button type='button' id='sti-split-close' style='border:1.5px solid #fff;background:#ef4444;color:#fff;border-radius:999px;padding:5px 13px;font-weight:900;font-size:12px;cursor:pointer'>✕ Quitter l'écran partagé</button>" +
+        "</div>" +
+      "</div>" +
+      "<div style='flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));min-height:0'>" +
+        /* Volet Gauche : Énoncé / Annexe */
+        "<div style='border-right:2.5px solid #0f766e;display:flex;flex-direction:column;min-height:0;background:#fff'>" +
+          "<iframe id='sti-split-doc-frame' src='" + esc(docParDefaut) + "' style='flex:1;width:100%;border:0;background:#fff'></iframe>" +
+        "</div>" +
+        /* Volet Droit : Éditeur HTML / CSS / JS + Aperçu */
+        "<div style='display:flex;flex-direction:column;min-height:0;background:#0f172a'>" +
+          "<div style='display:flex;gap:4px;padding:6px 10px;background:#1e293b;border-bottom:1px solid #334155'>" +
+            "<button type='button' data-sp-tab='html' style='border:1.5px solid #38bdf8;background:#38bdf8;color:#0f172a;border-radius:8px;padding:4px 10px;font-weight:900;font-size:11.5px;cursor:pointer'>🌐 HTML</button>" +
+            "<button type='button' data-sp-tab='css' style='border:1.5px solid #475569;background:transparent;color:#fff;border-radius:8px;padding:4px 10px;font-weight:800;font-size:11.5px;cursor:pointer'>🎨 CSS</button>" +
+            "<button type='button' data-sp-tab='js' style='border:1.5px solid #475569;background:transparent;color:#fff;border-radius:8px;padding:4px 10px;font-weight:800;font-size:11.5px;cursor:pointer'>⚡ JS</button>" +
+            "<button type='button' data-sp-tab='sql' style='border:1.5px solid #475569;background:transparent;color:#fff;border-radius:8px;padding:4px 10px;font-weight:800;font-size:11.5px;cursor:pointer'>🗄️ SQL / PHP</button>" +
+          "</div>" +
+          "<textarea id='sti-split-editor' spellcheck='false' style='flex:1;width:100%;border:0;padding:10px;background:#0f172a;color:#f8fafc;font:600 12.5px/1.5 ui-monospace,Consolas,monospace;resize:none;outline:none'></textarea>" +
+          "<div style='height:42%;border-top:2px solid #334155;display:flex;flex-direction:column;background:#fff;color:#0f172a'>" +
+            "<div style='padding:4px 10px;background:#f1f5f9;font-size:11px;font-weight:900;color:#334155;border-bottom:1px solid #cbd5e1'>👁️ Aperçu en direct de votre page :</div>" +
+            "<iframe id='sti-split-preview' sandbox='allow-scripts' style='flex:1;width:100%;border:0;background:#fff'></iframe>" +
+          "</div>" +
+        "</div>" +
+      "</div>";
+
+    (document.body || document.documentElement).appendChild(fond);
+
+    var etatCode = {
+      html: "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n</head>\n<body>\n  <h2>Ma solution TP STI</h2>\n  <form onsubmit=\"return verif()\">\n    <label>Nom :</label>\n    <input type=\"text\" id=\"nom\" name=\"nom\">\n    <input type=\"submit\" value=\"Valider\">\n  </form>\n</body>\n</html>",
+      css: "body { font-family: sans-serif; padding: 14px; }\ninput { padding: 5px; margin: 4px 0; }",
+      js: "function verif() {\n  var nom = document.getElementById(\"nom\").value;\n  if (nom.length === 0) {\n    alert(\"Veuillez saisir votre nom !\");\n    return false;\n  }\n  return true;\n}",
+      sql: "-- Vos requêtes SQL ou script PHP ici :\nSELECT * FROM client;"
+    };
+    var ongletAct = "html";
+    var txtEd = fond.querySelector("#sti-split-editor");
+    var frPrev = fond.querySelector("#sti-split-preview");
+    var frDoc = fond.querySelector("#sti-split-doc-frame");
+    var selDoc = fond.querySelector("#sti-split-sel-doc");
+
+    txtEd.value = etatCode.html;
+
+    function majApercuSplit() {
+      etatCode[ongletAct] = txtEd.value;
+      frPrev.srcdoc = "<!DOCTYPE html><html><head><meta charset='UTF-8'><style>" + etatCode.css + "</style></head><body>" + etatCode.html + "<script>" + etatCode.js + "<\/script></body></html>";
+    }
+
+    fond.querySelectorAll("button[data-sp-tab]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        etatCode[ongletAct] = txtEd.value;
+        ongletAct = btn.getAttribute("data-sp-tab");
+        txtEd.value = etatCode[ongletAct] || "";
+        fond.querySelectorAll("button[data-sp-tab]").forEach(function (b) {
+          var on = b === btn;
+          b.style.background = on ? "#38bdf8" : "transparent";
+          b.style.color = on ? "#0f172a" : "#fff";
+          b.style.borderColor = on ? "#38bdf8" : "#475569";
+        });
+      });
+    });
+
+    selDoc.addEventListener("change", function () {
+      frDoc.src = selDoc.value;
+    });
+    txtEd.addEventListener("input", function () {
+      etatCode[ongletAct] = txtEd.value;
+    });
+    fond.querySelector("#sti-split-run").addEventListener("click", majApercuSplit);
+    fond.querySelector("#sti-split-send").addEventListener("click", function () {
+      etatCode[ongletAct] = txtEd.value;
+      window.__stiEnvoyerCopieTpAuProf({
+        typeTp: "Écran Partagé (Énoncé + Code)",
+        html: etatCode.html,
+        css: etatCode.css,
+        js: etatCode.js,
+        sql: etatCode.sql,
+        codeComplet: "--- HTML ---\n" + etatCode.html + "\n--- CSS ---\n" + etatCode.css + "\n--- JS ---\n" + etatCode.js + "\n--- SQL/PHP ---\n" + etatCode.sql
+      });
+      afficherToastSynchro("📤 Votre copie a été envoyée au professeur !");
+    });
+    fond.querySelector("#sti-split-close").addEventListener("click", function () { fond.remove(); });
+
+    majApercuSplit();
   };
 })();
 
