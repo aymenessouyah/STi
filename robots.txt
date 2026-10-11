@@ -20,7 +20,7 @@ Disallow: /
 User-agent: GPTBot-User
 Disallow: /
 
-# --- Anthropic (Claude…) ---
+# --- Anthropic (Claude, ClaudeBot, Claude-Web, Claude-User…) ---
 User-agent: ClaudeBot
 Disallow: /
 User-agent: Claude-Web
@@ -31,9 +31,29 @@ User-agent: Claude-User
 Disallow: /
 User-agent: anthropic-ai
 Disallow: /
+User-agent: Anthropic-AI
+Disallow: /
 
-# --- Google (utilisation IA / Gemini) ---
+# --- Google (Gemini, Vertex AI, Google-Extended, GoogleOther…) ---
 User-agent: Google-Extended
+Disallow: /
+User-agent: GoogleOther
+Disallow: /
+User-agent: GoogleOther-Image
+Disallow: /
+User-agent: GoogleOther-Video
+Disallow: /
+User-agent: Google-CloudVertexBot
+Disallow: /
+User-agent: Gemini-Deep-Research
+Disallow: /
+
+# --- DeepSeek & xAI (Grok) ---
+User-agent: DeepSeekBot
+Disallow: /
+User-agent: GrokBot
+Disallow: /
+User-agent: xAI-Bot
 Disallow: /
 
 # --- Common Crawl (jeu de données d'entraînement de nombreux modèles) ---

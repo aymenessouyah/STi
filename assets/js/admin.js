@@ -1333,7 +1333,7 @@
   var btnVueNoeuds = document.getElementById("btn-vue-noeuds");
   var grilleNoeuds = document.getElementById("grille-noeuds-abonnes");
   var wrapTableAbonnes = document.getElementById("wrap-table-abonnes");
-  var modeVueAbonnes = "liste";
+  var modeVueAbonnes = (typeof window !== "undefined" && window.innerWidth <= 768) ? "noeuds" : "liste";
   try {
     var vSauv = localStorage.getItem("sti-admin-vue-abonnes");
     if (vSauv === "noeuds" || vSauv === "liste") modeVueAbonnes = vSauv;
@@ -1744,7 +1744,10 @@
           spEtat.className = "st " + (p.statut || "en_attente");
           spEtat.textContent = LIB[p.statut] || p.statut;
         }
-        meta.append(spCl, spEtat);
+        var spDurNd = document.createElement("span");
+        spDurNd.style.cssText = "background:#fffdf7;border:1.5px solid #23201a;border-radius:999px;padding:2px 8px;font-size:10.5px;font-weight:900;color:#23201a;";
+        spDurNd.textContent = "⏱️ " + fmtDuree(dureePourAbonne(p.id));
+        meta.append(spCl, spDurNd, spEtat);
 
         if (estEnLigne(p.id)) {
           var bOnNd = document.createElement("span");
@@ -5116,6 +5119,15 @@
         badgeMsnTop.textContent = String(totalNonRepondus);
       } else {
         badgeMsnTop.style.display = "none";
+      }
+    }
+    var badgeMsnMobNav = document.getElementById("badge-msn-mob-nav");
+    if (badgeMsnMobNav) {
+      if (totalNonRepondus > 0) {
+        badgeMsnMobNav.style.display = "inline-block";
+        badgeMsnMobNav.textContent = String(totalNonRepondus);
+      } else {
+        badgeMsnMobNav.style.display = "none";
       }
     }
     if (btnMsnDock) btnMsnDock.classList.toggle("alerte-nonlu", totalNonRepondus > 0);

@@ -372,14 +372,38 @@
     border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 900; color: #23201a;
   }
   .noeud-actions {
-    display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px;
+    display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 4px; flex-wrap: wrap;
   }
-  .noeud-actions .act { margin: 0; padding: 3px 7px; font-size: 11px; }
+  .noeud-actions .act { margin: 0; padding: 4px 8px; font-size: 11.5px; }
+
+  /* Éléments exclusifs à l'ergonomie mobile (masqués sur PC) */
+  .only-mob-flex { display: none; }
+  .mob-bottom-nav { display: none; }
+
   @media (max-width: 768px) {
-    .grille-noeuds { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .noeud-abonne { padding: 10px; border-radius: 14px; box-shadow: 2.5px 2.5px 0 #23201a; }
-    .noeud-pastille { width: 32px; height: 32px; font-size: 12px; }
-    .noeud-nom { font-size: 12px; }
+    .grille-noeuds { grid-template-columns: 1fr; gap: 10px; }
+    .noeud-abonne { padding: 12px 13px; border-radius: 15px; box-shadow: 3px 3px 0 #23201a; gap: 9px; }
+    .noeud-pastille { width: 38px; height: 38px; font-size: 13px; }
+    .noeud-nom { font-size: 14px; white-space: normal; }
+    .noeud-sub { font-size: 11.5px; white-space: normal; }
+    .noeud-classe { padding: 4px 11px; font-size: 12px; }
+    .noeud-actions {
+      justify-content: flex-start;
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(35,32,26,.18);
+    }
+    .noeud-actions .act {
+      min-height: 34px;
+      min-width: 36px;
+      padding: 6px 10px;
+      font-size: 12.5px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 1.5px 1.5px 0 #23201a;
+    }
   }
 
   .table-wrap { overflow-x: auto; border: 2px solid #23201a; border-radius: 16px; background: #fffdf7; box-shadow: 5px 5px 0 rgba(244,81,30,.45); }
@@ -407,81 +431,201 @@
   /* Colonnes Actions adaptatives : à la fin sur PC, juste après Lycée / Classe sur mobile */
   .only-mob { display: none; }
   @media (max-width: 768px) {
-    body { padding: 10px 10px 32px; }
+    body { padding: 8px 8px calc(76px + env(safe-area-inset-bottom, 0px)); }
+    .only-mob-flex { display: inline-flex; }
 
-    /* 1. En-tête mobile ultra-compact : identité sur 1 ligne + 4 boutons utilitaires sur 1 seule ligne */
+    /* 1. En-tête mobile compact avec tiroir d'outils pliable */
     .hero-admin {
-      padding: 11px 12px; gap: 10px; border-radius: 16px; margin-bottom: 10px;
-      box-shadow: 3.5px 3.5px 0 #f4511e;
+      padding: 10px 11px; gap: 8px; border-radius: 15px; margin-bottom: 8px;
+      box-shadow: 3px 3px 0 #f4511e;
     }
-    .entete { gap: 10px; width: 100%; }
-    .entete img { width: 40px; height: 40px; border-radius: 10px; }
-    .entete-txt h1 { font-size: 16.5px; gap: 6px; }
-    .entete-txt h1 svg { width: 20px; height: 20px; }
+    .entete { gap: 9px; width: 100%; }
+    .entete img { width: 38px; height: 38px; border-radius: 10px; }
+    .entete-txt h1 { font-size: 15.5px; gap: 5px; }
+    .entete-txt h1 svg { width: 19px; height: 19px; }
     .badge-temoin-examen { font-size: 10px; padding: 2px 7px; }
     .badge-admin-gold { font-size: 10px; padding: 2px 7px; }
+    .badge-version { font-size: 10px; padding: 2px 7px; }
+    .badge-supabase { font-size: 10px; padding: 2px 7px; }
     .sous { display: none; }
 
     .barre-util {
-      display: grid; grid-template-columns: repeat(3, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       gap: 5px; width: 100%;
     }
     .lbl-pc { display: none; }
     .lbl-mob { display: inline; }
     .btn-util {
-      justify-content: center; padding: 7px 4px; font-size: 11.5px;
+      justify-content: center; padding: 8px 4px; font-size: 11.5px; min-height: 36px;
       border-radius: 10px; box-shadow: 2px 2px 0 #23201a;
       white-space: nowrap;
     }
+    /* Sur mobile, seuls les 4 raccourcis directs + le bouton Tiroir sont visibles par défaut */
+    .barre-util .btn-util.mob-extra {
+      display: none;
+    }
+    body.mob-outils-ouverts .barre-util .btn-util.mob-extra {
+      display: inline-flex;
+    }
+    #btn-mob-toggle-outils {
+      grid-column: 1 / -1;
+      background: #23201a;
+      color: #ffd54f;
+      border-color: #f4511e;
+      font-size: 12px;
+      min-height: 36px;
+      box-shadow: 2px 2px 0 #f4511e;
+    }
 
-    /* 2. Les 4 grands boutons d'action en pavé 2×2 compact au pouce */
+    /* 2. Les 6 cartes d'action principales repliées par défaut sur mobile (ouvertes avec le tiroir Outils) */
     .actions-principales {
+      display: none;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px; margin-bottom: 10px;
+      gap: 7px; margin-bottom: 10px;
+    }
+    body.mob-outils-ouverts .actions-principales {
+      display: grid;
     }
     .carte-action {
       padding: 9px 10px; gap: 8px; border-radius: 13px;
-      box-shadow: 3px 3px 0 #23201a;
+      box-shadow: 2.5px 2.5px 0 #23201a;
     }
     .ca-ico {
-      width: 34px; height: 34px; border-radius: 9px; font-size: 17px;
+      width: 32px; height: 32px; border-radius: 9px; font-size: 16px;
       box-shadow: 1.5px 1.5px 0 #23201a;
     }
-    .ca-titre { font-size: 12px; line-height: 1.15; }
-    .ca-desc { font-size: 10px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .ca-titre { font-size: 11.5px; line-height: 1.15; }
+    .ca-desc { font-size: 9.5px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 
-    /* 3. Les 5 compteurs alignés sur 1 seule ligne horizontale */
+    /* 3. Les 5 compteurs alignés sur 1 seule ligne horizontale bien tactile */
     .stats {
       grid-template-columns: repeat(5, 1fr);
       gap: 5px; margin-bottom: 10px;
     }
     .stat {
-      padding: 7px 3px; border-radius: 11px;
+      padding: 8px 3px; border-radius: 11px;
       box-shadow: 2px 2px 0 rgba(244,81,30,.45);
     }
-    .stat b { font-size: 15.5px; }
+    .stat b { font-size: 16px; }
     .stat small { font-size: 8.5px; letter-spacing: 0; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 4. Barre de recherche et filtres structurée en grille 2 colonnes sur mobile */
+    /* 4. Barre de recherche et filtres mobile épurée (sans zoom iOS 16px + options secondaires pliables) */
     .filtres-bar {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 6px; padding: 8px; border-radius: 12px; margin-bottom: 10px;
+      gap: 6px; padding: 9px; border-radius: 13px; margin-bottom: 10px;
     }
     .filtres-bar input#filtre-recherche {
-      grid-column: 1 / -1; width: 100%; min-width: 0; padding: 7px 11px; font-size: 12px;
+      grid-column: 1 / -1; width: 100%; min-width: 0; padding: 9px 12px; font-size: 16px;
     }
     .filtres-bar select, .filtres-bar .btn-outil {
-      width: 100%; min-width: 0; padding: 7px 8px; font-size: 11.5px; text-align: center;
+      width: 100%; min-width: 0; padding: 8px 8px; font-size: 12px; min-height: 38px; text-align: center;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    .filtres-bar .mob-filtre-extra {
+      display: none;
+    }
+    .filtres-bar.mob-filtres-ouverts .mob-filtre-extra {
+      display: inline-block;
+    }
 
-    /* 5. Tableau des abonnés : Actions juste après Lycée / Classe en grille compacte */
+    /* 5. Tableau des abonnés sur mobile : 1re colonne collante + boutons tactiles larges */
     .only-mob { display: table-cell; }
     .only-pc { display: none; }
-    table { min-width: 560px; font-size: 12px; }
-    td, th { padding: 8px 7px; }
-    .cell-actions { min-width: 136px; }
-    .cell-actions .act { margin: 2px 2px 2px 0; padding: 4px 7px; font-size: 11px; }
+    table { min-width: 580px; font-size: 12px; }
+    td, th { padding: 9px 8px; }
+    #wrap-table-abonnes th:first-child,
+    #wrap-table-abonnes td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      max-width: 155px;
+      box-shadow: 2px 0 0 rgba(35,32,26,.16);
+    }
+    #wrap-table-abonnes th:first-child { background: #f3ead9; z-index: 3; }
+    #tb-abonnes tr.row-en_ligne td:first-child { background: #e3f6e8; }
+    #tb-abonnes tr.row-actif td:first-child { background: #ede9fe; }
+    #tb-abonnes tr.row-gold td:first-child { background: #ffe985; }
+    #tb-abonnes tr.row-en_attente td:first-child { background: #f5ead2; }
+    #tb-abonnes tr.row-exclu td:first-child { background: #fde2e6; }
+    #tb-abonnes tr.row-suspendu td:first-child { background: #ece7dd; }
+    .cell-actions { min-width: 168px; }
+    .cell-actions .act {
+      margin: 2px 3px 2px 0;
+      padding: 6px 9px;
+      font-size: 12px;
+      min-height: 32px;
+      min-width: 32px;
+    }
+
+    /* 6. Barre de navigation fixe en bas d'écran sur mobile (Bottom Navigation au pouce) */
+    .mob-bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9400;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+      background: #23201a;
+      border-top: 2.5px solid #f4511e;
+      box-shadow: 0 -4px 16px rgba(0,0,0,.28);
+    }
+    .mob-nav-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border: 1.5px solid rgba(255,255,255,.15);
+      border-radius: 10px;
+      background: rgba(255,253,247,.08);
+      color: #f9f1e3;
+      padding: 5px 2px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 900;
+      cursor: pointer;
+      min-height: 44px;
+    }
+    .mob-nav-btn .ico {
+      font-size: 15px;
+      line-height: 1;
+    }
+    .mob-nav-btn.actif {
+      background: #f4511e;
+      color: #fff;
+      border-color: #ffd54f;
+    }
+    .mob-nav-badge {
+      position: absolute;
+      top: 2px;
+      right: 6px;
+      background: #ffd54f;
+      color: #23201a;
+      font-size: 9.5px;
+      font-weight: 900;
+      padding: 0 5px;
+      border-radius: 999px;
+      border: 1px solid #23201a;
+    }
+    /* Le dock Messenger flottant est remplacé par l'onglet Chat de la barre du bas sur mobile */
+    #btn-messenger-dock {
+      display: none !important;
+    }
+    #btn-admin-to-top {
+      bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+      right: 10px !important;
+      padding: 8px 12px !important;
+      font-size: 11.5px !important;
+    }
+    html.sti-msn-mob-open .mob-bottom-nav,
+    body:has(.modal-fond.visible) .mob-bottom-nav,
+    body:has(#zone-detail.visible) .mob-bottom-nav {
+      display: none !important;
+    }
   }
 
   .badge-online {
@@ -1037,26 +1181,27 @@
           <span id="titre-tb-admin" style="color:#177245;transition:color .25s ease" title="🟢 En ligne">Tableau de bord STI V2.0</span>
           <span class="badge-temoin-examen" id="badge-temoin-examen" role="button" tabindex="0" title="🟢 Accès aux cours ouvert — Cliquer pour ouvrir le Centre de Sécurité / Mode Examen">🟢 Accès ouvert</span>
           <span class="badge-admin-gold">👑 Admin Gold</span>
-          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v109</span>
+          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v110</span>
           <span class="badge-supabase" id="badge-supabase-quota" title="Espace disponible dans la base Supabase (Quota 500 Mo) — cliquer pour voir le détail">🗄️ Supabase : <b id="sb-pct-restant">99,8 %</b> restant (<span id="sb-qte-restante">499,2 Mo / 500 Mo</span>)<span class="jauge-sb-mini" aria-hidden="true"><i id="sb-jauge-barre" style="width:99.8%"></i></span></span>
         </h1>
-        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v109)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
+        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v110)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
       </div>
     </div>
     <div class="barre-util">
-      <a class="btn-util" href="index.html">🏠 <span class="lbl-pc">Accueil du site</span><span class="lbl-mob">Site</span></a>
-      <a class="btn-util" href="carte-visite.html" title="Ouvrir et partager la carte de visite électronique avec QR code">🪪 <span class="lbl-pc">Carte visite</span><span class="lbl-mob">Carte</span></a>
+      <a class="btn-util mob-extra" href="index.html">🏠 <span class="lbl-pc">Accueil du site</span><span class="lbl-mob">Site</span></a>
+      <a class="btn-util mob-extra" href="carte-visite.html" title="Ouvrir et partager la carte de visite électronique avec QR code">🪪 <span class="lbl-pc">Carte visite</span><span class="lbl-mob">Carte</span></a>
       <button class="btn-util" id="btn-messenger-top" type="button" title="Ouvrir la messagerie directe Messenger STI avec les candidats" style="background:#fff3e0;border-color:#f4511e;color:#d84315">💬 <span class="lbl-pc">Messenger</span><span class="lbl-mob">Chat</span> <span id="badge-msn-top" style="display:none;background:#ffd54f;color:#23201a;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
       <button class="btn-util" id="btn-flash-top" type="button" title="Lancer une Question Flash / Sondage Live en classe" style="background:#fff8e1;border-color:#d97706;color:#b45309">⚡ <span class="lbl-pc">Question Flash</span><span class="lbl-mob">Flash</span></button>
-      <button class="btn-util" id="btn-mains-top" type="button" title="File d'attente des élèves ayant levé la main pour demander de l'aide en TP" style="background:#ede9fe;border-color:#6d28d9;color:#6d28d9">🙋‍♂️ <span class="lbl-pc">Mains levées</span><span class="lbl-mob">Aide</span> <span id="badge-mains-top" style="display:none;background:#6d28d9;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
-      <button class="btn-util" id="btn-palmares-top" type="button" title="Palmarès &amp; Podium par classe (Quiz, Questions Flash et Assiduité)" style="background:linear-gradient(120deg,#fff3b0,#ffd54f);border-color:#23201a;color:#6d4c00">🏆 <span class="lbl-pc">Palmarès</span><span class="lbl-mob">Top 3</span></button>
+      <button class="btn-util mob-extra" id="btn-mains-top" type="button" title="File d'attente des élèves ayant levé la main pour demander de l'aide en TP" style="background:#ede9fe;border-color:#6d28d9;color:#6d28d9">🙋‍♂️ <span class="lbl-pc">Mains levées</span><span class="lbl-mob">Aide</span> <span id="badge-mains-top" style="display:none;background:#6d28d9;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
+      <button class="btn-util mob-extra" id="btn-palmares-top" type="button" title="Palmarès &amp; Podium par classe (Quiz, Questions Flash et Assiduité)" style="background:linear-gradient(120deg,#fff3b0,#ffd54f);border-color:#23201a;color:#6d4c00">🏆 <span class="lbl-pc">Palmarès</span><span class="lbl-mob">Top 3</span></button>
       <button class="btn-util" id="btn-appel-top" type="button" title="Feuille d'appel &amp; présence automatique du jour par classe (Présents vs Absents)" style="background:#e3f6e8;border-color:#177245;color:#177245">📋 <span class="lbl-pc">Appel / Présence</span><span class="lbl-mob">Appel</span></button>
       <button class="btn-util" id="btn-securite-top" type="button" title="Centre de Sécurité : Mode Examen / Verrouillage, Anti-partage, Éjection F12 &amp; Journal d'alertes" style="background:#fde2e6;border-color:#c0392b;color:#a61b29">🛡️ <span class="lbl-pc">Sécurité</span><span class="lbl-mob">Sécu</span> <span id="badge-sec-top" style="display:none;background:#c0392b;color:#fff;font-size:10.5px;font-weight:900;padding:1px 6px;border-radius:999px;border:1.5px solid #23201a;margin-left:3px">0</span></button>
-      <button class="btn-util" id="btn-verrou-ecran-admin" type="button" title="Verrouiller instantanément l'écran du tableau de bord par code PIN quand vous vous déplacez en salle de classe">🔒 <span class="lbl-pc">Verrouiller</span><span class="lbl-mob">PIN</span></button>
-      <button class="btn-util" id="btn-readme-admin" type="button" title="Consulter la documentation complète de la plateforme (README)">📖 <span class="lbl-pc">README</span><span class="lbl-mob">README</span></button>
-      <button class="btn-util" id="btn-notif" type="button">🔔 <span class="lbl-pc">Notifications</span><span class="lbl-mob">Alertes</span></button>
-      <button class="btn-util" id="btn-refresh" type="button">🔄 <span class="lbl-pc">Actualiser</span><span class="lbl-mob">Maj</span></button>
-      <button class="btn-util logout" id="btn-logout" type="button">🚪 <span class="lbl-pc">Déconnexion</span><span class="lbl-mob">Sortir</span></button>
+      <button class="btn-util mob-extra" id="btn-verrou-ecran-admin" type="button" title="Verrouiller instantanément l'écran du tableau de bord par code PIN quand vous vous déplacez en salle de classe">🔒 <span class="lbl-pc">Verrouiller</span><span class="lbl-mob">PIN</span></button>
+      <button class="btn-util mob-extra" id="btn-readme-admin" type="button" title="Consulter la documentation complète de la plateforme (README)">📖 <span class="lbl-pc">README</span><span class="lbl-mob">README</span></button>
+      <button class="btn-util mob-extra" id="btn-notif" type="button">🔔 <span class="lbl-pc">Notifications</span><span class="lbl-mob">Alertes</span></button>
+      <button class="btn-util mob-extra" id="btn-refresh" type="button">🔄 <span class="lbl-pc">Actualiser</span><span class="lbl-mob">Maj</span></button>
+      <button class="btn-util logout mob-extra" id="btn-logout" type="button">🚪 <span class="lbl-pc">Déconnexion</span><span class="lbl-mob">Sortir</span></button>
+      <button class="btn-util only-mob-flex" id="btn-mob-toggle-outils" type="button">🧰 Tous les outils &amp; actions (15) ▾</button>
     </div>
   </header>
 
@@ -1126,12 +1271,12 @@
 
   <div class="msg" id="msg"></div>
 
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 10px">
+  <div id="sec-abonnes" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 10px;scroll-margin-top:14px">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <h2 style="margin:0">👥 Liste des Abonnés <span id="note-tri" style="font-size:11px;color:#7a6f5d;font-weight:700"></span></h2>
       <div class="choix-vue-abonnes" role="tablist" aria-label="Mode d'affichage des abonnés">
         <button type="button" class="btn-vue actif" id="btn-vue-liste" data-vue="liste" title="Afficher le tableau détaillé complet">📋 Liste détaillée</button>
-        <button type="button" class="btn-vue" id="btn-vue-noeuds" data-vue="noeuds" title="Afficher sous forme de nœuds (Nom, Prénom, Classe, État)">🔵 Nœuds</button>
+        <button type="button" class="btn-vue" id="btn-vue-noeuds" data-vue="noeuds" title="Afficher sous forme de cartes / nœuds (idéal sur mobile)">🔵 Nœuds</button>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:#7a6f5d">
@@ -1141,9 +1286,9 @@
   </div>
 
   <!-- Barre de recherche, filtres par lycée/classe/statut, gestion Lycées/Classes, validation groupée et export Excel/CSV -->
-  <div class="filtres-bar">
+  <div class="filtres-bar" id="filtres-bar-abonnes">
     <input type="search" id="filtre-recherche" placeholder="🔎 Rechercher un élève (nom, prénom, tél., e-mail)…" />
-    <select id="filtre-lycee">
+    <select id="filtre-lycee" class="mob-filtre-extra">
       <option value="*">🏛️ Tous les lycées</option>
     </select>
     <select id="filtre-classe">
@@ -1157,10 +1302,11 @@
       <option value="en_attente">⏳ En attente</option>
       <option value="exclu">⛔ Exclus</option>
     </select>
-    <button type="button" class="btn-outil" id="btn-gerer-lycees" title="Ajouter, renommer/changer ou supprimer des lycées">🏛️ Gérer Lycées</button>
-    <button type="button" class="btn-outil" id="btn-gerer-classes" title="Ajouter, renommer/changer ou supprimer des classes">🏫 Gérer Classes</button>
     <button type="button" class="btn-outil vert" id="btn-activer-lot" title="Activer en un clic toutes les demandes en attente affichées">✅ Tout activer (0)</button>
-    <button type="button" class="btn-outil" id="btn-export-csv" title="Télécharger la liste filtrée au format Excel (CSV)">📥 Exporter Excel (CSV)</button>
+    <button type="button" class="btn-outil only-mob-flex" id="btn-mob-toggle-filtres" style="justify-content:center;background:#fff3e0;border-color:#f4511e;color:#d84315">⚙️ Lycées / Export ▾</button>
+    <button type="button" class="btn-outil mob-filtre-extra" id="btn-gerer-lycees" title="Ajouter, renommer/changer ou supprimer des lycées">🏛️ Gérer Lycées</button>
+    <button type="button" class="btn-outil mob-filtre-extra" id="btn-gerer-classes" title="Ajouter, renommer/changer ou supprimer des classes">🏫 Gérer Classes</button>
+    <button type="button" class="btn-outil mob-filtre-extra" id="btn-export-csv" title="Télécharger la liste filtrée au format Excel (CSV)">📥 Exporter Excel (CSV)</button>
   </div>
 
   <!-- Bandeau affiché dès qu'une classe est appelée/sélectionnée : effectif de la classe + nombre en ligne -->
@@ -1189,7 +1335,7 @@
     </div>
   </div>
 
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:22px 0 10px">
+  <div id="sec-resultats-quiz" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:22px 0 10px;scroll-margin-top:16px">
     <h2 style="margin:0">🏆 Résultats des Quiz &amp; Atelier Bac Pratique</h2>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <select id="filtre-quiz-classe" style="border:2px solid #23201a;border-radius:999px;padding:6px 12px;background:#fffdf7;color:#23201a;font-weight:800;font-size:12px" title="Filtrer les résultats de Quiz par classe">
@@ -1680,7 +1826,7 @@
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="sec-chk-anticollage" checked style="width:17px;height:17px;margin:0" />
-            <span>📋 <b>Anti-collage massif externe (Anti-ChatGPT)</b> : bloquer tout collage de code externe (&gt; 60 caractères ou multi-lignes) et transmettre un extrait au professeur</span>
+            <span>🤖📋 <b>Bouclier Anti-IA (Anti-ChatGPT · Anti-Gemini · Anti-Claude)</b> : bloquer tout collage/glisser-déposer de code externe, détecter les extensions latérales IA (Gemini, Claude, ChatGPT), les Auto-Typers IA et injecter un piège Anti-Prompt sur les épreuves</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="sec-chk-plein-ecran" checked style="width:17px;height:17px;margin:0" />
@@ -2205,7 +2351,7 @@
         <ul style="margin:0 0 10px 18px;padding:0">
           <li><b>Documents PDF accessibles à tous &amp; Compte 👑 Gold</b> : tous les documents PDF (<code>.pdf</code> et <code>.pdf.html</code>) sont téléchargeables et imprimables par tous les abonnés ; le statut <b>👑 Gold</b> débloque en plus la copie et l'impression des pages de cours.</li>
           <li><b>Verrouillage strict du code source &amp; Éjection auto <code>3/3</code></b> : clic droit, <code>F12</code>, <code>Ctrl+U</code>, <code>Ctrl+Shift+I/J/C/K</code>, <code>Ctrl+S</code> et bouclier Anti-DevTools actifs pour 100 % des abonnés (même 👑 Gold et <code>elevelabo3</code>) avec éjection automatique à la 3e tentative.</li>
-          <li><b>Centre de Sécurité (<code>🛡️ Sécurité</code>)</b> : Mode Examen + Plein Écran <code>F11</code> obligatoire, Session unique anti-partage, Anti-triche sortie d'onglet (<code>Alt+Tab</code>), Anti-Écran partagé (<code>Split-screen &lt; 80 %</code>), Anti-Traduction auto (<code>translate="no"</code>), Anti-collage massif externe (Anti-ChatGPT), Filigrane nominatif anti-photo smartphone, Auto-déconnexion d'inactivité (15–60 min) et Sauvegarde complète Backup JSON.</li>
+          <li><b>Centre de Sécurité (<code>🛡️ Sécurité</code>)</b> : Mode Examen + Plein Écran <code>F11</code> obligatoire, Session unique anti-partage, Anti-triche sortie d'onglet (<code>Alt+Tab</code>), Anti-Écran partagé (<code>Split-screen &lt; 80 %</code>), Anti-Traduction auto (<code>translate="no"</code>), Bouclier Anti-IA complet (<b>Anti-ChatGPT · Anti-Gemini · Anti-Claude</b> : anti-collage, anti-drop, anti-extensions IA, anti-Auto-Typer et piège Anti-Prompt), Filigrane nominatif anti-photo smartphone, Auto-déconnexion d'inactivité (15–60 min) et Sauvegarde complète Backup JSON.</li>
           <li><b>Service Worker <code>sw.js</code> (100 % hors-ligne)</b> : fonctionnement intégral hors-ligne avec synchronisation différée automatique.</li>
         </ul>
       </div>
@@ -2309,6 +2455,31 @@
     Plateforme STI V2.0 © Aymen Essouyah — Lycée Raféha · <span id="pied-version-admin">🏷️ Version active : STI V2.0 (v96)</span> · <span id="pied-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo / 500 Mo)</span> · <button type="button" id="pied-readme-admin" style="border:1.5px solid #23201a;background:#fffdf7;color:#23201a;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:800;cursor:pointer">📖 README</button> · <button type="button" id="pied-haut-admin" style="border:1.5px solid #23201a;background:#f4511e;color:#fff;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:800;cursor:pointer">⬆ Haut</button>
   </footer>
 
+  <!-- Barre de navigation rapide mobile fixe en bas d'écran (visible uniquement sur smartphone ≤ 768px) -->
+  <nav class="mob-bottom-nav" id="mob-bottom-nav" aria-label="Navigation rapide mobile">
+    <button type="button" class="mob-nav-btn actif" data-mob-scroll="sec-abonnes">
+      <span class="ico">👥</span>
+      <span>Abonnés</span>
+    </button>
+    <button type="button" class="mob-nav-btn" id="mob-nav-chat">
+      <span class="ico">💬</span>
+      <span>Chat</span>
+      <span class="mob-nav-badge" id="badge-msn-mob-nav" style="display:none">0</span>
+    </button>
+    <button type="button" class="mob-nav-btn" id="mob-nav-outils">
+      <span class="ico">🧰</span>
+      <span>Outils</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-mob-scroll="sec-resultats-quiz">
+      <span class="ico">🏆</span>
+      <span>Quiz</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-mob-scroll="sec-dernieres-connexions">
+      <span class="ico">🕒</span>
+      <span>Connexions</span>
+    </button>
+  </nav>
+
 <script>
   (function () {
     var mod = document.getElementById("modal-readme");
@@ -2364,11 +2535,65 @@
     }
     window.addEventListener("scroll", majBtnTop, { passive: true });
     majBtnTop();
+
+    /* Ergonomie Mobile : tiroir Outils & Actions, tiroir Filtres avancés et Barre de navigation basse */
+    var btnMobOutils = document.getElementById("btn-mob-toggle-outils");
+    var mobNavOutils = document.getElementById("mob-nav-outils");
+    function basculerTiroirOutilsMob(forcerOuvert) {
+      var ouv = typeof forcerOuvert === "boolean"
+        ? forcerOuvert
+        : !document.body.classList.contains("mob-outils-ouverts");
+      document.body.classList.toggle("mob-outils-ouverts", ouv);
+      if (btnMobOutils) {
+        btnMobOutils.textContent = ouv
+          ? "🧰 Masquer les outils & actions ▴"
+          : "🧰 Tous les outils & actions (15) ▾";
+      }
+      if (mobNavOutils) mobNavOutils.classList.toggle("actif", ouv);
+    }
+    if (btnMobOutils) {
+      btnMobOutils.addEventListener("click", function () { basculerTiroirOutilsMob(); });
+    }
+    if (mobNavOutils) {
+      mobNavOutils.addEventListener("click", function () {
+        var vaOuvrir = !document.body.classList.contains("mob-outils-ouverts");
+        basculerTiroirOutilsMob(vaOuvrir);
+        if (vaOuvrir) window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    var btnMobFiltres = document.getElementById("btn-mob-toggle-filtres");
+    var barFiltres = document.getElementById("filtres-bar-abonnes");
+    if (btnMobFiltres && barFiltres) {
+      btnMobFiltres.addEventListener("click", function () {
+        var ouvF = barFiltres.classList.toggle("mob-filtres-ouverts");
+        btnMobFiltres.textContent = ouvF ? "⚙️ Masquer options ▴" : "⚙️ Lycées / Export ▾";
+      });
+    }
+
+    var mobNavChat = document.getElementById("mob-nav-chat");
+    if (mobNavChat) {
+      mobNavChat.addEventListener("click", function () {
+        var bMsnTop = document.getElementById("btn-messenger-top");
+        if (bMsnTop) bMsnTop.click();
+      });
+    }
+
+    document.querySelectorAll("#mob-bottom-nav .mob-nav-btn[data-mob-scroll]").forEach(function (btnNav) {
+      btnNav.addEventListener("click", function () {
+        var idC = btnNav.getAttribute("data-mob-scroll");
+        var elC = idC ? document.getElementById(idC) : null;
+        document.querySelectorAll("#mob-bottom-nav .mob-nav-btn[data-mob-scroll]").forEach(function (b) {
+          b.classList.toggle("actif", b === btnNav);
+        });
+        if (elC) elC.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
   })();
 </script>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=109"></script>
-<script src="assets/js/admin.js?v=109"></script>
+<script src="assets/js/config.js?v=110"></script>
+<script src="assets/js/admin.js?v=110"></script>
 </body>
 </html>
