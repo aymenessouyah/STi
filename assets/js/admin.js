@@ -878,6 +878,8 @@
     inactiviteMin: 30,
     alerteMultiAppareils: true,
     antiCollageActif: true,
+    melangeQcmActif: true,
+    copyTrapActif: true,
     pleinEcranExamen: true,
     filigraneActif: true,
     antiSplitScreen: true,
@@ -5657,6 +5659,8 @@
   var selInactiviteMin = document.getElementById("sec-sel-inactivite-min");
   var chkMultiAppareils = document.getElementById("sec-chk-multi-appareils");
   var chkAntiCollage = document.getElementById("sec-chk-anticollage");
+  var chkMelangeQcm = document.getElementById("sec-chk-melange-qcm");
+  var chkCopyTrap = document.getElementById("sec-chk-copytrap");
   var chkPleinEcran = document.getElementById("sec-chk-plein-ecran");
   var chkFiligrane = document.getElementById("sec-chk-filigrane");
   var chkSplitScreen = document.getElementById("sec-chk-splitscreen");
@@ -5742,6 +5746,8 @@
     if (selInactiviteMin && cfgSecuriteAdmin.inactiviteMin) selInactiviteMin.value = String(cfgSecuriteAdmin.inactiviteMin);
     if (chkMultiAppareils) chkMultiAppareils.checked = cfgSecuriteAdmin.alerteMultiAppareils !== false;
     if (chkAntiCollage) chkAntiCollage.checked = cfgSecuriteAdmin.antiCollageActif !== false;
+    if (chkMelangeQcm) chkMelangeQcm.checked = cfgSecuriteAdmin.melangeQcmActif !== false;
+    if (chkCopyTrap) chkCopyTrap.checked = cfgSecuriteAdmin.copyTrapActif !== false;
     if (chkPleinEcran) chkPleinEcran.checked = cfgSecuriteAdmin.pleinEcranExamen !== false;
     if (chkFiligrane) chkFiligrane.checked = cfgSecuriteAdmin.filigraneActif !== false;
     if (chkSplitScreen) chkSplitScreen.checked = cfgSecuriteAdmin.antiSplitScreen !== false;
@@ -5980,7 +5986,7 @@
     });
   }
 
-  [chkSessionUnique, chkEjectDevtools, chkAntiTricheOnglet, chkInactivite, selInactiviteMin, chkMultiAppareils, chkAntiCollage, chkPleinEcran, chkFiligrane, chkSplitScreen].forEach(function (el) {
+  [chkSessionUnique, chkEjectDevtools, chkAntiTricheOnglet, chkInactivite, selInactiviteMin, chkMultiAppareils, chkAntiCollage, chkMelangeQcm, chkCopyTrap, chkPleinEcran, chkFiligrane, chkSplitScreen].forEach(function (el) {
     if (!el) return;
     el.addEventListener("change", function () {
       sauvegarderEtDiffuserConfigSecurite({
@@ -5991,6 +5997,8 @@
         inactiviteMin: selInactiviteMin ? (parseInt(selInactiviteMin.value, 10) || 30) : 30,
         alerteMultiAppareils: chkMultiAppareils ? chkMultiAppareils.checked : true,
         antiCollageActif: chkAntiCollage ? chkAntiCollage.checked : true,
+        melangeQcmActif: chkMelangeQcm ? chkMelangeQcm.checked : true,
+        copyTrapActif: chkCopyTrap ? chkCopyTrap.checked : true,
         pleinEcranExamen: chkPleinEcran ? chkPleinEcran.checked : true,
         filigraneActif: chkFiligrane ? chkFiligrane.checked : true,
         antiSplitScreen: chkSplitScreen ? chkSplitScreen.checked : true

@@ -1181,10 +1181,10 @@
           <span id="titre-tb-admin" style="color:#177245;transition:color .25s ease" title="🟢 En ligne">Tableau de bord STI V2.0</span>
           <span class="badge-temoin-examen" id="badge-temoin-examen" role="button" tabindex="0" title="🟢 Accès aux cours ouvert — Cliquer pour ouvrir le Centre de Sécurité / Mode Examen">🟢 Accès ouvert</span>
           <span class="badge-admin-gold">👑 Admin Gold</span>
-          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v110</span>
+          <span class="badge-version" id="badge-version-admin" title="Cliquer pour vérifier les mises à jour de la plateforme">🏷️ Version V2.0 · v111</span>
           <span class="badge-supabase" id="badge-supabase-quota" title="Espace disponible dans la base Supabase (Quota 500 Mo) — cliquer pour voir le détail">🗄️ Supabase : <b id="sb-pct-restant">99,8 %</b> restant (<span id="sb-qte-restante">499,2 Mo / 500 Mo</span>)<span class="jauge-sb-mini" aria-hidden="true"><i id="sb-jauge-barre" style="width:99.8%"></i></span></span>
         </h1>
-        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v110)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
+        <div class="sous">Pilotage en direct des classes, abonnés, durées hebdomadaires, contrôles chronométrés et quiz · <strong id="sous-version-admin" style="color:#f4511e">Version V2.0 (v111)</strong> · <strong id="sous-supabase-quota" style="color:#177245">🗄️ Supabase : 99,8 % restant (499,2 Mo libres / 500 Mo)</strong></div>
       </div>
     </div>
     <div class="barre-util">
@@ -1805,7 +1805,15 @@
           </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="sec-chk-antitriche-onglet" checked style="width:17px;height:17px;margin:0" />
-            <span>👀 <b>Anti-triche Quiz &amp; Contrôle</b> : détecter et alerter en direct chaque fois qu'un élève quitte l'onglet ou change de fenêtre (Alt+Tab)</span>
+            <span>📵 <b>Anti-triche &amp; Chronométrage exact des absences hors épreuve</b> : détecter chaque sortie d'onglet / perte de focus, mesurer la durée exacte d'absence en secondes et signaler toute absence prolongée (≥ 10 s · Suspect IA Gemini / Claude / ChatGPT)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="sec-chk-melange-qcm" checked style="width:17px;height:17px;margin:0" />
+            <span>🔀 <b>Tirage aléatoire par élève (Anti-copie entre voisins)</b> : mélanger différemment l'ordre des questions et l'ordre des choix (A, B, C, D) sur chaque poste (Questions Flash, Examen Blanc /20 &amp; Quiz)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="sec-chk-copytrap" checked style="width:17px;height:17px;margin:0" />
+            <span>🕵️‍♂️ <b>Piège « Cheval de Troie » au Copier (Copy-Trap Anti-Gemini / Claude / ChatGPT)</b> : injecter une variable témoin invisible (<code>verif_sti_ae</code>) lors d'une copie d'énoncé pour détecter à 100 % toute réponse générée par IA</span>
           </label>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -2593,7 +2601,7 @@
 </script>
 
 <script src="assets/js/supabase-umd.js"></script>
-<script src="assets/js/config.js?v=110"></script>
-<script src="assets/js/admin.js?v=110"></script>
+<script src="assets/js/config.js?v=111"></script>
+<script src="assets/js/admin.js?v=111"></script>
 </body>
 </html>

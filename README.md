@@ -74,7 +74,7 @@ cours complets, leçons animées pas à pas, annexes officielles, flashcards 3D,
 ### 📊 4. Tableau de bord Administrateur temps réel & Pilotage de classe (`admin.html`)
 - **Sécurité d'accès exclusive, Verrou anti-flash `0 ms`, Version & Jauge Supabase** :
   - Accès à `admin.html` **strictement réservé au seul compte administrateur** avec protection immédiate dès `0 ms` avant le premier rendu.
-  - Affichage permanent de la version (`STI V2.0 · v110`) accompagné du **pourcentage et de l'espace restant en direct dans Supabase** (sur le quota de 500 Mo via `public.admin_taille_base()`).
+  - Affichage permanent de la version (`STI V2.0 · v111`) accompagné du **pourcentage et de l'espace restant en direct dans Supabase** (sur le quota de 500 Mo via `public.admin_taille_base()`).
   - **🔒 Verrouillage rapide de l'écran Admin par code PIN (`#modal-verrou-ecran-admin`)** : permet au professeur de verrouiller l'écran du tableau de bord en 1 clic lorsqu'il circule dans les rangs.
 - **📋 Feuille d'appel & présence automatique du jour par classe (`#modal-appel-presence`)** :
   - Croisement automatique des abonnés de la classe choisie avec les connexions du jour : liste claire des **`🟢 Présents`** (avec heure exacte de 1re connexion et appareil) et des **`🔴 Absents`**, prête à être **imprimée (`🖨️`)** ou **exportée en CSV (`📥`)**.
@@ -108,11 +108,13 @@ cours complets, leçons animées pas à pas, annexes officielles, flashcards 3D,
   2. **🖥️ Plein Écran (`F11`) obligatoire en Mode Examen** : masque la barre d'adresse et les onglets du navigateur pendant l'épreuve et alerte le professeur en cas de sortie du plein écran.
   3. **🚫 Anti-partage de compte (Session unique)** : 1 seule session simultanée par élève (déconnexion immédiate de l'ancien appareil avec `#partage`).
   4. **⚡ Éjection auto Code Source (`3/3`)** : déconnexion immédiate (`#securite`) après 3 tentatives d'ouverture de `F12` / `Ctrl+U` / DevTools.
-  5. **👀 Anti-triche sortie d'onglet (`Alt+Tab`)** : détection et alerte temps réel si l'élève quitte l'onglet pendant un Quiz, un Contrôle ou le Mode Examen.
-  6. **📐 Anti-Écran partagé (`Split-screen < 80 %`) & 🌐 Anti-Traduction automatique (`translate="no"`)** : bloque l'affichage côte à côte avec une IA/antisèche pendant les épreuves et interdit à Google Translate de traduire et fausser les mots-clés `SELECT`, `WHERE`, `input`, `function`…
-  7. **🤖📋 Bouclier Anti-IA complet (Anti-ChatGPT · Anti-Gemini · Anti-Claude)** : bloque le collage (`paste`) et le glisser-déposer (`drop`) de blocs de texte/code externes ou porteurs de signatures DOM `Gemini`, `Claude` ou `ChatGPT`, bloque les extensions de frappe automatique (*Auto-Typers IA*), détecte et neutralise en direct les extensions latérales d'IA injectées dans la page (*Gemini*, *Claude*, *ChatGPT*, *Monica*, *Sider*, *Merlin*, *MaxAI*, *Harpa*) et injecte un piège sémantique Anti-Prompt sur les épreuves.
-  8. **🕵️ Filigrane nominatif anti-photo smartphone** : affiche en diagonale semi-transparente l'identité, la classe, l'empreinte d'appareil `#XXXX` et l'heure sur toutes les pages.
-  9. **📱 Identification d'appareil (`#XXXX`), Alerte multi-appareils (`≥ 3`), ⏳ Auto-déconnexion après inactivité (15–60 min) & 💾 Backup JSON complet** en 1 clic.
+  5. **📵 Anti-triche & Chronométrage exact des absences hors épreuve (`Alt+Tab` / ouverture d'application tierce)** : détecte chaque sortie d'onglet ou perte de focus pendant un Quiz, un Contrôle, l'Examen Blanc ou le Mode Examen, mesure en secondes la durée exacte d'absence et le cumul total, et déclenche une alerte critique en cas d'absence prolongée (`≥ 10 s` · Suspect IA Gemini / Claude / ChatGPT).
+  6. **🔀 Tirage aléatoire par élève (Sujets & QCM dynamiques anti-copie entre voisins)** : mélange automatiquement l'ordre des questions et l'ordre des propositions (`A, B, C, D`) différemment sur chaque poste (Questions Flash en direct, Examen Blanc `/20` et Quiz).
+  7. **🕵️‍♂️ Piège « Cheval de Troie » invisible au Copier (`Copy-Trap` Anti-Gemini / Claude / ChatGPT)** : injecte une consigne furtive et un filigrane invisible lors de la copie d'un énoncé afin d'obliger Gemini, Claude ou ChatGPT à glisser un identifiant témoin (`verif_sti_ae` / `sti_ctrl_94`) dans sa réponse, détectant ainsi à **100 %** l'usage d'une IA dès que l'élève colle ou tape ce code.
+  8. **📐 Anti-Écran partagé (`Split-screen < 80 %`) & 🌐 Anti-Traduction automatique (`translate="no"`)** : bloque l'affichage côte à côte avec une IA/antisèche pendant les épreuves et interdit à Google Translate de traduire et fausser les mots-clés `SELECT`, `WHERE`, `input`, `function`…
+  9. **🤖📋 Bouclier Anti-IA complet (Anti-ChatGPT · Anti-Gemini · Anti-Claude)** : bloque le collage (`paste`) et le glisser-déposer (`drop`) de blocs de texte/code externes ou porteurs de signatures DOM `Gemini`, `Claude` ou `ChatGPT`, bloque les extensions de frappe automatique (*Auto-Typers IA*), détecte et neutralise en direct les extensions latérales d'IA injectées dans la page (*Gemini*, *Claude*, *ChatGPT*, *Monica*, *Sider*, *Merlin*, *MaxAI*, *Harpa*) et injecte un piège sémantique Anti-Prompt sur les épreuves.
+  10. **🕵️ Filigrane nominatif anti-photo smartphone** : affiche en diagonale semi-transparente l'identité, la classe, l'empreinte d'appareil `#XXXX` et l'heure sur toutes les pages.
+  11. **📱 Identification d'appareil (`#XXXX`), Alerte multi-appareils (`≥ 3`), ⏳ Auto-déconnexion après inactivité (15–60 min) & 💾 Backup JSON complet** en 1 clic.
 - **Protection Anti-IA (`robots.txt` & balises `noai` / `noimageai`)** :
   - Interdiction d'indexation et d'extraction par les robots et agents d'IA (`GPTBot`, `ChatGPT-User`, `OAI-SearchBot`, `ClaudeBot`, `Claude-Web`, `Claude-User`, `Claude-SearchBot`, `anthropic-ai`, `Google-Extended`, `GoogleOther`, `Google-CloudVertexBot`, `Gemini-Deep-Research`, `DeepSeekBot`, `GrokBot`, `CCBot`, `Bytespider`, etc.) sur toutes les pages.
 
@@ -128,7 +130,7 @@ STI-Atelier-V2.0/
 ├── admin.html                        # 📊 Tableau de bord Admin temps réel, Appel, Sécurité, Flash & Messenger
 ├── bac-pratique.html                 # 🧪 Atelier Épreuve Pratique Bac STI (réservé 4SI / Labo / Admin)
 ├── carte-visite.html                 # 🪪 Carte de visite numérique AE (.vcf & impression réservés Admin)
-├── sw.js                             # ⚙️ Service Worker PWA (cache 100 % hors-ligne sti-atelier-v110)
+├── sw.js                             # ⚙️ Service Worker PWA (cache 100 % hors-ligne sti-atelier-v111)
 ├── manifest.webmanifest              # 📱 Manifeste d'installation PWA
 ├── robots.txt                        # 🤖 Directives SEO & blocage des crawlers IA
 ├── sitemap.xml                       # 🗺️ Plan du site
@@ -206,7 +208,7 @@ STI-Atelier-V2.0/
 
 ---
 
-## 🚀 Architecture & Mode 100 % Hors-ligne (`sti-atelier-v110`)
+## 🚀 Architecture & Mode 100 % Hors-ligne (`sti-atelier-v111`)
 
 1. **Service Worker (`sw.js`) sans aucun lien mort** :
    - Pré-chargement automatique en tâche de fond de l'ensemble des fichiers du site (cours, animations, exercices, quiz, PDF, archives `.zip`, polices et icônes) avec résolution exacte des sous-dossiers (`/cssanimee/`, `/Positionnement-animee/`, etc.).
